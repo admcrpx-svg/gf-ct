@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GF MÔVE — CT Gislaine</title>
+<style>
+:root{--bg:#0f0e13;--card:#17161d;--line:#2a2833;--ink:#f2efe9;--mut:#96928c;--sun1:#ff8a3d;--sun2:#ffb347}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 90px}
+h1{margin:0;font-size:23px;letter-spacing:.5px}
+h1 b{background:linear-gradient(90deg,var(--sun1),var(--sun2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--mut);font-size:13px;margin:5px 0 14px}
+.bar{position:sticky;top:0;z-index:9;background:var(--bg);padding:10px 0;border-bottom:1px solid var(--line);margin-bottom:8px}
+.row1{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+input[type=search]{flex:1;min-width:180px;background:var(--card);border:1px solid var(--line);border-radius:10px;color:var(--ink);padding:8px 12px;font:inherit}
+select,button{font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 11px;cursor:pointer}
+button:hover,select:hover{border-color:var(--sun1)}
+button.pri{background:linear-gradient(90deg,var(--sun1),var(--sun2));color:#111;border-color:transparent;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip{padding:5px 11px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--mut);cursor:pointer;font-size:12.5px}
+.chip.on{color:#111;background:linear-gradient(90deg,var(--sun1),var(--sun2));border-color:transparent;font-weight:600}
+.count{color:var(--mut);font-size:12.5px;margin-left:auto}
+#addPanel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:6px 0 14px}
+#addPanel h3{margin:0 0 12px;font-size:15px}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:11px}
+.formgrid label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mut)}
+.formgrid input,.formgrid select{background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--ink);padding:8px 10px;font:inherit}
+#s_tmpl{background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--ink);padding:8px 10px;font:inherit;width:100%;resize:vertical;margin-top:4px}
+.hint{font-size:12px;color:var(--mut)}
+.formgrid label.req span::after{content:" *";color:var(--sun1)}
+.formbtns{display:flex;gap:10px;align-items:center;margin-top:14px}
+#addMsg{font-size:13px;color:#7fe0a0}
+#rotaPanel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:6px 0 14px}
+#rotaPanel h3{margin:0 0 12px;font-size:15px}
+#r_gps.on{background:linear-gradient(90deg,var(--sun1),var(--sun2));color:#111;border-color:transparent;font-weight:600}
+.rstop{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line)}
+.rstop b.n{color:var(--sun2);min-width:22px}
+.rstop small{color:var(--mut);display:block;font-weight:400}
+.rstop.rdone{opacity:.5}
+.rstop.rdone>span>b{text-decoration:line-through}
+.rcbx{width:20px;height:20px;accent-color:var(--sun1);cursor:pointer;flex:0 0 auto;margin-top:1px}
+.rkm{margin-left:auto;color:var(--mut);font-size:12px;white-space:nowrap}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{position:sticky;top:96px;background:var(--bg);color:var(--mut);font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;z-index:5;cursor:pointer;white-space:nowrap}
+tr.done{opacity:.4}
+td.nm{font-weight:600}
+td.nm small{display:block;color:var(--mut);font-weight:400;font-size:11.5px}
+a{color:var(--sun2);text-decoration:none} a:hover{text-decoration:underline}
+a.wa{color:#7fe0a0}
+.st{font-size:11.5px;padding:3px 9px;border-radius:20px;font-weight:600;white-space:nowrap}
+.st.Novo{background:#123a52;color:#7fc8ff}
+.st.Hot{background:#4a1512;color:#ff9d8a}
+.st.Negotiating{background:#4a3a12;color:#ffd479}
+.st.Cold{background:#22252b;color:#9fb0c0}
+.st.Freeze{background:#1b2f45;color:#8fbfe6}
+.st.x{background:#22252b;color:var(--mut)}
+.rsp{font-size:11.5px;padding:2px 8px;border-radius:6px}
+.rsp.Juliana{background:#2a2233;color:#c9a6ff} .rsp.Gislaine{background:#3a2a12;color:var(--sun2)}
+.mut{color:var(--mut)} .ret.late{color:#ff9d8a;font-weight:600}
+.mine{font-size:10px;color:var(--sun2);border:1px solid var(--line);border-radius:5px;padding:0 4px;margin-left:6px;cursor:pointer}
+td .cbx{width:16px;height:16px;accent-color:var(--sun1);cursor:pointer}
+td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
+.selrow{background:rgba(255,138,61,.09)}
+#fireModal{position:fixed;inset:0;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+#fireModal[hidden]{display:none}
+#fireModal .fmbox{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;max-width:520px;width:100%}
+.fmhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+#fmProg{font-weight:700;color:var(--sun2)}
+.fmx{padding:4px 10px}
+.fmbar{height:6px;background:var(--bg);border-radius:6px;overflow:hidden;margin-bottom:14px}
+#fmBarFill{height:100%;background:linear-gradient(90deg,var(--sun1),var(--sun2));width:0%;transition:width .2s}
+.fmname{font-size:18px;font-weight:700}
+.fmmeta{color:var(--mut);font-size:13px;margin:3px 0 12px}
+#fmMsg{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--ink);padding:10px;font:inherit;resize:vertical}
+.fmbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.flagbtn{border-color:#8a5a2a;color:#ffb06a}
+.rbtn{font-size:12.5px;padding:6px 10px}
+.flag{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:20px;background:#3a2a12;color:#ffb06a;border:1px solid #6a4a1a;margin-left:6px;cursor:pointer}
+#alertaBtn.on{background:linear-gradient(90deg,#ffb06a,#ff8a3d);color:#111;border-color:transparent;font-weight:600}
+@media(max-width:680px){
+  .wrap{padding:12px 10px 90px}
+  h1{font-size:20px}
+  input[type=search]{min-width:100%}
+  select,button{padding:9px 11px;font-size:13px}
+  .bar{padding:8px 0;position:static}
+  table,thead,tbody,tr,td{display:block;width:100%}
+  thead{display:none}
+  tr{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:0 0 10px;padding:9px 13px}
+  tr.selrow{border-color:var(--sun1)}
+  td{border:none;padding:5px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:right}
+  td::before{content:attr(data-label);color:var(--mut);font-size:12px;font-weight:600;text-align:left;flex:0 0 auto}
+  td.nm{font-size:16px;font-weight:700;justify-content:flex-start;text-align:left;padding-bottom:7px;border-bottom:1px solid var(--line);margin-bottom:4px}
+  td.nm::before{content:""}
+  td.nm small{display:inline;margin-left:6px}
+  a.wa,a.ig{padding:9px 14px;border-radius:9px;font-size:15px;text-decoration:none}
+  a.wa{background:#123a24;color:#8ff0b0;border:1px solid #1f5a38}
+  a.ig{color:var(--sun2)}
+  td .selbox,td .cbx{width:24px;height:24px}
+  #fireModal .fmbox{max-width:100%}
+  #fmMsg{font-size:16px}
+}
+@media print{.bar,#addPanel,#rotaPanel,#setPanel{display:none}body{background:#fff;color:#000}a{color:#000}th{top:0}}
+</style></head><body><div class="wrap">
+<h1>GF <b>MÔVE</b> — CT <b>Gislaine</b></h1>
+<div class="sub">CT da Gislaine (Floripa e São José). Adiciona o contato com endereço e nicho, marca quem já foi, e a <b>🗺️ Rota do dia</b> monta a lista dos mais próximos pra mandar pro Circuit.</div>
+<div class="bar">
+  <div class="row1">
+    <input type="search" id="q" placeholder="Buscar nome, @, cidade, nicho...">
+    <select id="sort">
+      <option value="ret">Ordenar: retorno mais próximo</option>
+      <option value="status">Ordenar: status (quente→frio)</option>
+      <option value="name">Ordenar: nome A-Z</option>
+      <option value="city">Ordenar: cidade</option>
+    </select>
+    <button id="addBtn" class="pri">➕ Adicionar contato</button>
+    <button id="rotaBtn" class="pri">🗺️ Rota do dia</button>
+    <button id="fireBtn">🚀 Disparar (0)</button>
+    <button id="selVis">☑️ Selecionar visíveis</button>
+    <button id="selRet">📅 Selecionar 20 p/ retorno</button>
+    <button id="selClr">🧹 Limpar disparos</button>
+    <button id="alertaBtn">⚑ Alertas (0)</button>
+    <button id="retBtn">📅 Agendar retorno</button>
+    <button id="doneClr">🧹 Limpar contatados</button>
+    <button id="setBtn">⚙️ WhatsApp</button>
+    <button id="hideDone">👁️ Ocultar contatados</button>
+    <button id="csvBtn">⬇️ CSV</button>
+    <button id="saveState" class="pri">💾 Salvar progresso</button>
+    <button id="loadStateBtn">📂 Carregar progresso</button>
+    <input type="file" id="loadState" accept="application/json" style="display:none">
+    <span id="stateMsg" class="hint"></span>
+    <button onclick="window.print()">🖨️ PDF</button>
+  </div>
+  <div class="row1">
+    <div class="chips" id="respChips"></div>
+    <span class="mut" style="margin:0 4px">·</span>
+    <div class="chips" id="statChips"></div>
+    <span class="count" id="count"></span>
+  </div>
+</div>
+<div id="addPanel" hidden>
+  <h3>Novo contato</h3>
+  <div class="formgrid">
+    <label class="req"><span>Nome</span><input id="f_nome" autocomplete="off"></label>
+    <label><span>Instagram (@ ou link)</span><input id="f_ig" placeholder="@fulano ou instagram.com/fulano" autocomplete="off"></label>
+    <label><span>WhatsApp</span><input id="f_wa" placeholder="(45) 99999-9999" autocomplete="off"></label>
+    <label><span>Cidade</span><input id="f_city" placeholder="Florianópolis / São José" autocomplete="off"></label>
+    <label><span>Endereço (rua, número)</span><input id="f_end" placeholder="Rua Fulano, 123" autocomplete="off"></label>
+    <label><span>Bairro</span><input id="f_bairro" placeholder="Kobrasol" autocomplete="off"></label>
+    <label><span>Nicho</span><select id="f_niche"><option value="">—</option><option>Gastronomia</option><option>Barbearia</option><option>Salão de beleza</option><option>Estética automotiva</option><option>Pet</option><option>Confeitaria</option><option>Moda</option><option>Academia</option><option>Saúde</option><option>Outro</option></select></label>
+    <label><span>Responsável</span><select id="f_resp"><option>Gislaine</option><option>Juliana</option><option value="">—</option></select></label>
+    <label><span>Status</span><select id="f_status"><option value="Novo">Novo</option><option value="Hot">Hot</option><option value="Negotiating">Negociando</option><option value="Cold">Cold</option><option value="Freeze">Freeze</option></select></label>
+    <label><span>Último contato</span><input id="f_last" placeholder="DD.MM" autocomplete="off"></label>
+    <label><span>Retorno</span><input id="f_ret" placeholder="DD.MM" autocomplete="off"></label>
+    <label><span>Valor negociando</span><input id="f_val" placeholder="R$0,00 (vazio = zero)" autocomplete="off"></label>
+  </div>
+  <div class="formbtns">
+    <button id="saveContact" class="pri">Salvar contato</button>
+    <button id="cancelAdd">Fechar</button>
+    <span id="addMsg"></span>
+  </div>
+</div>
+<div id="rotaPanel" hidden>
+  <h3>🗺️ Rota do dia</h3>
+  <div class="formgrid">
+    <label><span>Nicho</span><select id="r_niche"></select></label>
+    <label><span>Região (cidade ou bairro)</span><select id="r_area"></select></label>
+    <label><span>Paradas (Circuit grátis aceita 10)</span><input id="r_n" type="number" min="1" max="10" value="10"></label>
+  </div>
+  <div class="formbtns">
+    <button id="r_build" class="pri">Montar rota</button>
+    <button id="r_gps">📍 Partir de onde eu estou</button>
+    <button id="r_loc" title="Busca no mapa quem ainda está sem 📍">📍 Localizar pendentes</button>
+    <button id="r_close">Fechar</button>
+    <span id="r_msg" class="hint"></span>
+  </div>
+  <label class="hint" style="display:flex;align-items:center;gap:6px;margin-top:10px"><input type="checkbox" id="r_skip" checked style="accent-color:var(--sun1)"> pular quem já tem ✓ (contatado)</label>
+  <div id="r_out"></div>
+</div>
+<div id="setPanel" hidden>
+  <h3>Ajustes do WhatsApp</h3>
+  <div class="formgrid">
+    <label><span>Abrir conversa em</span><select id="s_mode">
+      <option value="web">WhatsApp Web (navegador)</option>
+      <option value="app">App WhatsApp Desktop</option>
+      <option value="wa">wa.me (universal / celular)</option>
+    </select></label>
+    <label><span>Pré-preencher a mensagem</span><select id="s_prefill">
+      <option value="1">Sim — já abre com o texto pronto</option>
+      <option value="0">Não — abre o chat vazio</option>
+    </select></label>
+  </div>
+  <label class="hint" style="display:block;margin-top:12px">Mensagem de abertura — use <b>{nome}</b> e <b>{cidade}</b> (se não houver nome, some sozinho)
+    <textarea id="s_tmpl" rows="3"></textarea>
+  </label>
+  <div class="formbtns">
+    <button id="saveSet" class="pri">Salvar ajustes</button>
+    <button id="closeSet">Fechar</button>
+    <span class="hint">Cada pessoa configura no seu próprio navegador — cada uma configura no seu próprio navegador.</span>
+  </div>
+</div>
+<table><thead><tr>
+<th title="Selecionar p/ disparo">🚀</th><th title="Já contatei">✓</th><th data-k="client">Cliente</th><th>Instagram</th><th>WhatsApp</th>
+<th data-k="city">Cidade</th><th data-k="resp">Dono</th><th data-k="status">Status</th>
+<th data-k="date_last">Últ. contato</th><th data-k="rk">Retorno</th><th>Valor</th>
+</tr></thead><tbody id="tb"></tbody></table>
+<div id="fireModal" hidden>
+  <div class="fmbox">
+    <div class="fmhead"><span id="fmProg">1 de 1</span><button id="fmClose" class="fmx">✕</button></div>
+    <div class="fmbar"><div id="fmBarFill"></div></div>
+    <div id="fmName" class="fmname"></div>
+    <div id="fmMeta" class="fmmeta"></div>
+    <textarea id="fmMsg" rows="4"></textarea>
+    <div class="fmbtns">
+      <button id="fmOpen" class="pri">📲 Abrir no WhatsApp →</button>
+      <button id="fmSkip">Pular</button>
+      <button id="fmFlag" class="flagbtn">⚑ Alerta</button>
+      <button id="fmBack">◀ Voltar</button>
+    </div>
+    <div id="fmReasons" hidden>
+      <div class="hint" style="margin:8px 0 2px">Marcar este contato como:</div>
+      <div class="fmbtns">
+        <button class="rbtn" data-r="Sem interesse">Sem interesse</button>
+        <button class="rbtn" data-r="Não é agora">Não é agora</button>
+        <button class="rbtn" data-r="Número sem WhatsApp">Sem WhatsApp</button>
+        <button class="rbtn" data-r="Rever depois">Rever depois</button>
+      </div>
+    </div>
+    <div class="hint" style="margin-top:10px">Abra, confira, <b>envie no WhatsApp</b> e volte aqui pra ir pro próximo.</div>
+  </div>
+</div>
+</div>
+<script>
+const DATA=[{"client": "Box 32 (Mercado Público)", "person": "", "handle": "", "phone": "4830372661", "wa": "554830372661", "city": "Florianópolis", "resp": "Gislaine", "status": "Novo", "date_last": "", "date_return": "", "value": "R$0,00", "niche": "Gastronomia", "source": "Teste", "id": "t:box32", "endereco": "Rua Jerônimo Coelho, 60", "bairro": "Centro", "cep": "88010-030", "lat": -27.5973289, "lon": -48.55306, "ig": "", "wa_disp": "(48) 3037-2661", "rk": 99999, "s": "box 32 (mercado público) florianópolis gastronomia centro rua jerônimo coelho, 60 novo gislaine"}, {"client": "Churrascaria Kobrasol", "person": "", "handle": "", "phone": "", "wa": "", "city": "São José", "resp": "Gislaine", "status": "Novo", "date_last": "", "date_return": "", "value": "R$0,00", "niche": "Gastronomia", "source": "Teste", "id": "t:churrkobrasol", "endereco": "Rua Adhemar da Silva, 215", "bairro": "Kobrasol", "cep": "88101-090", "lat": -27.5913236, "lon": -48.6121415, "ig": "", "wa_disp": "", "rk": 99999, "s": "churrascaria kobrasol são josé gastronomia kobrasol rua adhemar da silva, 215 novo gislaine"}, {"client": "Delícias do Kobrasol", "person": "", "handle": "", "phone": "", "wa": "", "city": "São José", "resp": "Gislaine", "status": "Novo", "date_last": "", "date_return": "", "value": "R$0,00", "niche": "Gastronomia", "source": "Teste", "id": "t:deliciaskobrasol", "endereco": "Rua Koesa, 77", "bairro": "Kobrasol", "cep": "88102-310", "lat": -27.5919011, "lon": -48.6136821, "ig": "", "wa_disp": "", "rk": 99999, "s": "delícias do kobrasol são josé gastronomia kobrasol rua koesa, 77 novo gislaine"}, {"client": "Luiz Barbearia", "person": "", "handle": "", "phone": "", "wa": "", "city": "São José", "resp": "Gislaine", "status": "Novo", "date_last": "", "date_return": "", "value": "R$0,00", "niche": "Barbearia", "source": "Teste", "id": "t:luizbarbearia", "endereco": "Av. Cruz e Souza, 284", "bairro": "Campinas", "cep": "88101-040", "lat": -27.5984284, "lon": -48.6111179, "ig": "", "wa_disp": "", "rk": 99999, "s": "luiz barbearia são josé barbearia campinas av. cruz e souza, 284 novo gislaine"}];
+let done={}; try{done=JSON.parse(localStorage.getItem("giscrm")||"{}")}catch(e){done={}}
+let added=[]; try{added=JSON.parse(localStorage.getItem("giscrm_added")||"[]")}catch(e){added=[]}
+let waMode=localStorage.getItem("giscrm_wamode")||"web";
+let waPrefill=(localStorage.getItem("giscrm_waprefill")==="0")?false:true;
+let waTmpl=localStorage.getItem("giscrm_watmpl")||"Opa {nome}, tudo bem? Aqui é a Gislaine, da GF Môve (produtora de audiovisual). Posso te roubar 1 minutinho?";
+const isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||window.matchMedia("(max-width:680px)").matches;
+let sel=new Set();
+let overrides={}; try{overrides=JSON.parse(localStorage.getItem("giscrm_over")||"{}")}catch(e){overrides={}}
+let fResp="Todos", fStat="Todos", fHide=false, fAlerta=false, sortK="ret", q="";
+const statOrder={Hot:0,Negotiating:1,Novo:2,Freeze:3,Cold:4,"—":5};
+const TODAY=new Date(); const todayKey=(TODAY.getMonth()+1)*31+TODAY.getDate();
+
+function normHandle(s){if(!s)return"";s=(""+s).trim().toLowerCase();if(!s||s==="-")return"";s=s.replace(/https?:\/\//,"").replace("www.","");if(s.indexOf("instagram.com/")>=0)s=s.split("instagram.com/")[1];s=s.replace(/^@/,"");s=s.split(/[\/?# ]/)[0].trim();return s;}
+function waFull(s){let d=(""+(s||"")).replace(/\D/g,"");if(!d)return"";if(d.length>11&&d.startsWith("55"))d=d.slice(2);if(!d.startsWith("55"))d="55"+d;return d;}
+function waDisp(full){if(!full)return"";let x=full.startsWith("55")?full.slice(2):full;let ddd=x.slice(0,2),rest=x.slice(2);if(rest.length===9)return`(${ddd}) ${rest.slice(0,5)}-${rest.slice(5)}`;if(rest.length===8)return`(${ddd}) ${rest.slice(0,4)}-${rest.slice(4)}`;return`(${ddd}) ${rest}`;}
+function retKey(s){const m=(""+(s||"")).match(/^(\d{1,2})\.(\d{1,2})/);if(!m)return 99999;return (+m[2])*31+(+m[1]);}
+function enrich(r){r.ig=r.handle?("https://instagram.com/"+r.handle):"";r.wa_disp=waDisp(r.wa);r.rk=retKey(r.date_return);r.s=[r.client,r.person,r.handle,r.city,r.niche,r.bairro,r.endereco,r.status,r.resp].join(" ").toLowerCase();return r;}
+function ALL(){return DATA.concat(added).map(r=>{const o=overrides[r.id];if(!o)return r;const m=Object.assign({},r,o);m.rk=retKey(m.date_return);return m;});}
+function firstName(s){s=(""+(s||"")).trim();return s?s.split(/\s+/)[0]:"";}
+function waHref(r){
+  let base = isMobile ? `https://wa.me/${r.wa}` : (waMode==="app" ? `whatsapp://send?phone=${r.wa}` : waMode==="web" ? `https://web.whatsapp.com/send?phone=${r.wa}` : `https://wa.me/${r.wa}`);
+  if(waPrefill && waTmpl.trim()){
+    const nome = r.person ? firstName(r.person) : "";
+    let txt = waTmpl.replace(/{nome}/g,nome).replace(/{cidade}/g,r.city||"");
+    txt = txt.replace(/\s+,/g,",").replace(/\s{2,}/g," ").trim();
+    base += (base.indexOf("?")>=0?"&":"?")+"text="+encodeURIComponent(txt);
+  }
+  return base;
+}
+
+let winRefs={};
+function openIn(name,url){
+  const w=winRefs[name];
+  try{ if(w && !w.closed){ w.location.href=url; w.focus(); return; } }catch(e){}
+  winRefs[name]=window.open(url,name);
+}
+function counts(field){const c={};ALL().forEach(r=>{const v=r[field]||"—";c[v]=(c[v]||0)+1});return c}
+function buildChips(){
+  const rc=counts("resp");
+  document.getElementById("respChips").innerHTML=
+    ['Todos','Gislaine','Juliana'].map(v=>`<span class="chip" data-t="resp" data-v="${v}">${v}${v!=='Todos'?' '+(rc[v]||0):''}</span>`).join('');
+  const sc=counts("status");
+  const order=['Todos','Novo','Hot','Negotiating','Cold','Freeze'];
+  document.getElementById("statChips").innerHTML=
+    order.filter(v=>v==='Todos'||sc[v]).map(v=>`<span class="chip" data-t="stat" data-v="${v}">${v==='Negotiating'?'Negoc.':v}${v!=='Todos'?' '+(sc[v]||0):''}</span>`).join('');
+  syncChips();
+}
+function syncChips(){
+  document.querySelectorAll('.chip').forEach(c=>{
+    const on=(c.dataset.t==='resp'&&c.dataset.v===fResp)||(c.dataset.t==='stat'&&c.dataset.v===fStat);
+    c.classList.toggle('on',on);
+  });
+}
+function esc(s){return (""+(s||"")).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function currentRows(){
+  let rows=ALL().filter(r=>{
+    if(fResp!=="Todos"&&r.resp!==fResp)return false;
+    if(fStat!=="Todos"&&r.status!==fStat)return false;
+    if(fAlerta&&!r.alerta)return false;
+    if(fHide&&done[r.id])return false;
+    if(q&&!r.s.includes(q))return false;
+    return true;
+  });
+  rows.sort((a,b)=>{
+    if(sortK==="ret")return a.rk-b.rk || (statOrder[a.status]??9)-(statOrder[b.status]??9);
+    if(sortK==="status")return (statOrder[a.status]??9)-(statOrder[b.status]??9) || a.rk-b.rk;
+    if(sortK==="name")return a.client.localeCompare(b.client);
+    if(sortK==="city")return (a.city||"").localeCompare(b.city||"")||a.client.localeCompare(b.client);
+    return 0;
+  });
+  return rows;
+}
+function view(){
+  const rows=currentRows();
+  const tb=document.getElementById("tb");
+  tb.innerHTML=rows.map(r=>{
+    const ig=r.ig?`<a class="ig" href="${esc(r.ig)}" target="_blank" rel="noopener">@${esc(r.handle)}</a>`:'<span class="mut">—</span>';
+    const wa=r.wa?`<a class="wa" href="${waHref(r)}" target="_blank" rel="noopener">📲 ${r.wa_disp}</a>`:'<span class="mut">—</span>';
+    const stc=["Novo","Hot","Negotiating","Cold","Freeze"].includes(r.status)?r.status:"x";
+    const stTxt=r.status==="Negotiating"?"Negoc.":r.status;
+    const late=(r.rk<99999&&r.rk<todayKey&&r.status!=="Novo")?" late":"";
+    const ret=r.date_return?`<span class="ret${late}">${esc(r.date_return)}</span>`:'<span class="mut">—</span>';
+    const rsp=r.resp?`<span class="rsp ${r.resp}">${r.resp}</span>`:'<span class="mut">—</span>';
+    const del=r.source==='Manual'?`<span class="mine" data-del="${r.id}" title="Excluir este contato">excluir</span>`:'';
+    const flag=r.alerta?`<span class="flag" data-flag="${r.id}" title="Clique pra tirar o alerta">⚑ ${esc(r.alerta)}</span>`:'';
+    const psub=[r.person,r.niche,r.bairro].filter(Boolean).join(" · ");const person=psub?`<small class="mut">${esc(psub)}</small>`:'';
+    return `<tr class="${done[r.id]?'done':''}${sel.has(r.id)?' selrow':''}" data-id="${r.id}">
+      <td data-label="🚀 Disparo"><input class="selbox" type="checkbox" ${sel.has(r.id)?'checked':''}></td>
+      <td data-label="✓ Contatei"><input class="cbx" type="checkbox" ${done[r.id]?'checked':''}></td>
+      <td class="nm">${esc(r.client)}${del}${flag}${person}</td>
+      <td data-label="Instagram">${ig}</td><td data-label="WhatsApp">${wa}</td>
+      <td class="mut" data-label="Cidade">${esc(r.city)||'—'}</td>
+      <td data-label="Dono">${rsp}</td>
+      <td data-label="Status"><span class="st ${stc}">${stTxt}</span></td>
+      <td class="mut" data-label="Últ. contato">${esc(r.date_last)||'—'}</td>
+      <td data-label="Retorno">${ret}</td>
+      <td class="mut" data-label="Valor">${r.value&&r.value!=='R$0.00'&&r.value!=='R$0,00'?esc(r.value):'—'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById("count").textContent=`${rows.length} de ${ALL().length} contatos`;
+  document.getElementById("alertaBtn").textContent="⚑ Alertas ("+ALL().filter(r=>r.alerta).length+")";
+}
+// ---- add / delete ----
+function saveAdded(){localStorage.setItem("giscrm_added",JSON.stringify(added));}
+document.getElementById("addBtn").addEventListener("click",()=>{const p=document.getElementById("addPanel");p.hidden=!p.hidden;if(!p.hidden){document.getElementById("f_nome").focus();window.scrollTo({top:0,behavior:'smooth'});}});
+document.getElementById("cancelAdd").addEventListener("click",()=>{document.getElementById("addPanel").hidden=true;});
+document.getElementById("setBtn").addEventListener("click",()=>{
+  const p=document.getElementById("setPanel");
+  document.getElementById("s_mode").value=waMode;
+  document.getElementById("s_prefill").value=waPrefill?"1":"0";
+  document.getElementById("s_tmpl").value=waTmpl;
+  p.hidden=!p.hidden; if(!p.hidden)window.scrollTo({top:0,behavior:'smooth'});
+});
+document.getElementById("closeSet").addEventListener("click",()=>{document.getElementById("setPanel").hidden=true;});
+document.getElementById("saveSet").addEventListener("click",()=>{
+  waMode=document.getElementById("s_mode").value;
+  waPrefill=document.getElementById("s_prefill").value==="1";
+  waTmpl=document.getElementById("s_tmpl").value;
+  localStorage.setItem("giscrm_wamode",waMode);
+  localStorage.setItem("giscrm_waprefill",waPrefill?"1":"0");
+  localStorage.setItem("giscrm_watmpl",waTmpl);
+  document.getElementById("setPanel").hidden=true; view();
+});
+document.getElementById("saveContact").addEventListener("click",()=>{
+  const g=id=>document.getElementById(id).value.trim();
+  const nome=g("f_nome");
+  if(!nome){alert("Coloque pelo menos o nome do contato.");document.getElementById("f_nome").focus();return;}
+  const handle=normHandle(g("f_ig"));
+  const wa=waFull(g("f_wa"));
+  // aviso de duplicado
+  const dup=ALL().find(r=>(handle&&r.handle===handle)||(wa&&r.wa===wa));
+  if(dup&&!confirm(`Já existe "${dup.client}" com esse @ ou telefone. Adicionar mesmo assim?`))return;
+  let val=g("f_val"); if(!val)val="R$0,00";
+  const rec=enrich({
+    client:nome, person:"", handle:handle, phone:wa.replace(/^55/,''), wa:wa,
+    city:g("f_city"), resp:g("f_resp"), status:g("f_status"),
+    date_last:g("f_last"), date_return:g("f_ret"), value:val,
+    niche:g("f_niche"), endereco:g("f_end"), bairro:g("f_bairro"), cep:"", lat:null, lon:null,
+    source:"Manual", id:"u:"+Date.now()+"."+Math.floor(Math.random()*100000)
+  });
+  added.push(rec); saveAdded();
+  if(rec.endereco){
+    geoAddr(rec.endereco,rec.bairro,rec.city).then(g=>{
+      const m=document.getElementById("addMsg");
+      if(g){setCoord(rec.id,g);m.textContent="✓ "+rec.client+" · 📍 endereço localizado";}
+      else{m.textContent="✓ "+rec.client+" · sem 📍 por enquanto (o Circuit acha pelo endereço)";}
+      setTimeout(()=>m.textContent="",4000);view();
+    });
+  }
+  ["f_nome","f_ig","f_wa","f_city","f_end","f_bairro","f_last","f_ret","f_val"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("f_status").value="Novo";document.getElementById("f_niche").value="";
+  const msg=document.getElementById("addMsg"); msg.textContent="✓ "+nome+" adicionado";
+  setTimeout(()=>msg.textContent="",2500);
+  buildChips(); view(); document.getElementById("f_nome").focus();
+});
+document.getElementById("tb").addEventListener("click",e=>{
+  const waL=e.target.closest("a.wa"); if(waL){ if(isMobile)return; e.preventDefault();openIn("gfwa",waL.href);return;}
+  const igL=e.target.closest("a.ig"); if(igL){ if(isMobile)return; e.preventDefault();openIn("gfig",igL.href);return;}
+  const fg=e.target.closest("[data-flag]"); if(fg){const id=fg.dataset.flag; if(confirm("Tirar o alerta deste contato?")){overrides[id]=Object.assign({},overrides[id]||{},{alerta:""});localStorage.setItem("giscrm_over",JSON.stringify(overrides));view();} return;}
+  const d=e.target.closest("[data-del]"); if(!d)return;
+  const id=d.dataset.del; const r=added.find(x=>x.id===id);
+  if(r&&confirm(`Excluir "${r.client}"?`)){added=added.filter(x=>x.id!==id);saveAdded();buildChips();view();}
+});
+document.getElementById("csvBtn").addEventListener("click",()=>{
+  const q=s=>'"'+(""+(s||"")).replace(/"/g,'""')+'"';
+  const head=["Nome","Instagram","WhatsApp","Cidade","Endereco","Bairro","Nicho","Responsavel","Status","Ultimo_contato","Retorno","Valor"];
+  const lines=[head.join(",")];
+  ALL().forEach(r=>lines.push([r.client,r.ig,r.wa_disp,r.city,r.endereco,r.bairro,r.niche,r.resp,r.status,r.date_last,r.date_return,r.value].map(q).join(",")));
+  const blob=new Blob(["﻿"+lines.join("\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="CT-GISLAINE-export.csv";a.click();
+});
+// ---- checkbox / filtros ----
+document.getElementById("tb").addEventListener("change",e=>{
+  const tr=e.target.closest("tr"); if(!tr)return; const id=tr.dataset.id;
+  if(e.target.classList.contains("selbox")){
+    if(e.target.checked)sel.add(id);else sel.delete(id);
+    tr.classList.toggle("selrow",e.target.checked); updateFire(); return;
+  }
+  if(!e.target.classList.contains("cbx"))return;
+  if(e.target.checked)done[id]=1;else delete done[id];
+  localStorage.setItem("giscrm",JSON.stringify(done));
+  tr.classList.toggle("done",e.target.checked);
+});
+document.addEventListener("click",e=>{
+  const c=e.target.closest(".chip"); if(!c)return;
+  if(c.dataset.t==="resp")fResp=c.dataset.v; else fStat=c.dataset.v;
+  syncChips(); view();
+});
+document.getElementById("q").addEventListener("input",e=>{q=e.target.value.toLowerCase().trim();view()});
+document.getElementById("sort").addEventListener("change",e=>{sortK=e.target.value;view()});
+document.getElementById("hideDone").addEventListener("click",e=>{fHide=!fHide;e.target.textContent=fHide?'👁️ Mostrar todos':'👁️ Ocultar contatados';view()});
+document.querySelectorAll("th[data-k]").forEach(th=>th.addEventListener("click",()=>{
+  const k=th.dataset.k; sortK=(k==='rk')?'ret':(k==='status')?'status':(k==='city')?'city':'name';
+  document.getElementById("sort").value=sortK; view();
+}));
+// ---- disparo sequencial ----
+let queue=[], qi=0;
+function updateFire(){document.getElementById("fireBtn").textContent=`🚀 Disparar (${sel.size})`;}
+function dispMsg(r){let nome=r.person?firstName(r.person):"";let t=waTmpl.replace(/{nome}/g,nome).replace(/{cidade}/g,r.city||"");return t.replace(/\s+,/g,",").replace(/\s{2,}/g," ").trim();}
+function showFire(){
+  const r=queue[qi];
+  document.getElementById("fmProg").textContent=`${qi+1} de ${queue.length}`;
+  document.getElementById("fmBarFill").style.width=(qi/queue.length*100)+"%";
+  document.getElementById("fmName").textContent=r.client;
+  document.getElementById("fmMeta").textContent=[r.person,r.city,r.wa_disp||"sem WhatsApp"].filter(Boolean).join(" · ");
+  document.getElementById("fmMsg").value=dispMsg(r);
+  document.getElementById("fmOpen").disabled=!r.wa;
+  document.getElementById("fmBack").disabled=(qi===0);
+  document.getElementById("fmReasons").hidden=true;
+}
+function fireOpen(){
+  const r=queue[qi]; if(!r.wa)return;
+  let base= isMobile ? `https://wa.me/${r.wa}` : (waMode==="app"?`whatsapp://send?phone=${r.wa}`:waMode==="web"?`https://web.whatsapp.com/send?phone=${r.wa}`:`https://wa.me/${r.wa}`);
+  const txt=document.getElementById("fmMsg").value.trim();
+  if(txt)base+=(base.indexOf("?")>=0?"&":"?")+"text="+encodeURIComponent(txt);
+  if(isMobile){ window.open(base,"_blank"); } else { openIn("gfwa",base); }
+}
+function fireAdvance(mark){
+  const r=queue[qi];
+  if(mark){done[r.id]=1;localStorage.setItem("giscrm",JSON.stringify(done));}
+  qi++;
+  if(qi>=queue.length){document.getElementById("fireModal").hidden=true;buildChips();view();alert("Disparo concluído! ✅ "+queue.length+" abertos.");return;}
+  showFire();
+}
+document.getElementById("fireBtn").addEventListener("click",()=>{
+  queue=currentRows().filter(r=>sel.has(r.id));
+  if(!queue.length){alert('Marque pelo menos 1 contato na caixinha 🚀 da linha (ou use "Selecionar visíveis").');return;}
+  qi=0; document.getElementById("fireModal").hidden=false; showFire();
+});
+document.getElementById("fmClose").addEventListener("click",()=>{document.getElementById("fireModal").hidden=true;view();});
+document.getElementById("fmOpen").addEventListener("click",()=>{fireOpen();fireAdvance(true);});
+document.getElementById("fmSkip").addEventListener("click",()=>fireAdvance(false));
+document.getElementById("fmBack").addEventListener("click",()=>{if(qi>0){qi--;showFire();}});
+function setAlerta(id,reason){overrides[id]=Object.assign({},overrides[id]||{},{alerta:reason});localStorage.setItem("giscrm_over",JSON.stringify(overrides));}
+document.getElementById("fmFlag").addEventListener("click",()=>{const p=document.getElementById("fmReasons");p.hidden=!p.hidden;});
+document.getElementById("fmReasons").addEventListener("click",e=>{const b=e.target.closest(".rbtn");if(!b)return;setAlerta(queue[qi].id,b.dataset.r);document.getElementById("fmReasons").hidden=true;fireAdvance(false);});
+document.getElementById("alertaBtn").addEventListener("click",e=>{fAlerta=!fAlerta;e.currentTarget.classList.toggle("on",fAlerta);view();});
+document.getElementById("selVis").addEventListener("click",()=>{currentRows().forEach(r=>sel.add(r.id));updateFire();view();});
+document.getElementById("selClr").addEventListener("click",()=>{sel.clear();updateFire();view();});
+document.getElementById("doneClr").addEventListener("click",()=>{
+  const n=Object.keys(done).filter(id=>done[id]).length;
+  if(!n){alert("Nenhum contato marcado com ✓ (contatei).");return;}
+  if(confirm("Desmarcar os "+n+" contatos com ✓? As datas de retorno que você já agendou continuam.")){done={};localStorage.setItem("giscrm",JSON.stringify(done));view();}
+});
+document.getElementById("selRet").addEventListener("click",()=>{
+  const pool=currentRows().filter(r=>r.rk<99999&&r.wa&&!r.alerta).sort((a,b)=>a.rk-b.rk).slice(0,20);
+  if(!pool.length){alert("Nenhum contato COM NÚMERO e retorno próximo pra selecionar. (Ignora quem não tem WhatsApp e quem já tem alerta.)");return;}
+  sel.clear(); pool.forEach(r=>sel.add(r.id));
+  updateFire(); view();
+  alert(`${pool.length} contato(s) com retorno mais próximo marcados pra disparo (🚀). Agora clique em 🚀 Disparar.`);
+});
+document.getElementById("retBtn").addEventListener("click",()=>{
+  const allIds=new Set(ALL().map(r=>r.id));
+  const ids=Object.keys(done).filter(id=>done[id]&&allIds.has(id));
+  if(!ids.length){alert("Primeiro marque com o ✓ (a caixinha ao lado do nome) os contatos que você já falou. Depois clique em Agendar retorno.");return;}
+  const days=parseInt(prompt(`Você marcou ${ids.length} contato(s) como já falados (✓). Voltar a falar com eles em quantos dias?`,"20"),10);
+  if(!days||days<1)return;
+  const now=new Date(), fut=new Date(now.getTime()+days*86400000);
+  const f=d=>String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0");
+  const hoje=f(now), ret=f(fut);
+  ids.forEach(id=>{overrides[id]=Object.assign({},overrides[id]||{},{date_last:hoje,date_return:ret});});
+  localStorage.setItem("giscrm_over",JSON.stringify(overrides));
+  buildChips(); view();
+  alert(`${ids.length} contato(s) agendados pra retornar em ${days} dias (dia ${ret}). ✅ Ordene por "retorno mais próximo" pra ver quem vence.`);
+});
+document.getElementById("saveState").addEventListener("click",()=>{
+  const st={done,overrides,added,savedAt:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(st)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="CT-GISLAINE-progresso.json";a.click();
+  const m=document.getElementById("stateMsg");m.textContent="✓ progresso salvo no arquivo";setTimeout(()=>m.textContent="",3500);
+});
+document.getElementById("loadStateBtn").addEventListener("click",()=>document.getElementById("loadState").click());
+document.getElementById("loadState").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const st=JSON.parse(rd.result);
+      if(st.done){done=st.done;localStorage.setItem("giscrm",JSON.stringify(done));}
+      if(st.overrides){overrides=st.overrides;localStorage.setItem("giscrm_over",JSON.stringify(overrides));}
+      if(st.added){added=st.added;localStorage.setItem("giscrm_added",JSON.stringify(added));}
+      buildChips();view();updateFire();
+      const m=document.getElementById("stateMsg");m.textContent="✓ progresso carregado";setTimeout(()=>m.textContent="",3500);
+    }catch(err){alert("Arquivo de progresso inválido. Escolha o CT-GISLAINE-progresso.json que você salvou.");}
+  };
+  rd.readAsText(f);
+});
+// ---- rota do dia / Circuit ----
+function hasCoord(r){return typeof r.lat==="number"&&typeof r.lon==="number";}
+function hav(a,b){const d=x=>x*Math.PI/180;const h=Math.sin(d(b.lat-a.lat)/2)**2+Math.cos(d(a.lat))*Math.cos(d(b.lat))*Math.sin(d(b.lon-a.lon)/2)**2;return 12742*Math.asin(Math.sqrt(h));}
+let rStart=null, rotaAtual=[];
+function rotaCands(){
+  const ni=document.getElementById("r_niche").value, ar=document.getElementById("r_area").value, skip=document.getElementById("r_skip").checked;
+  return ALL().filter(r=>r.endereco).filter(r=>!ni||r.niche===ni).filter(r=>{
+    if(!ar)return true; const i=ar.indexOf("::"), t=ar.slice(0,i), v=ar.slice(i+2);
+    return t==="c"?(r.city===v):((r.bairro||"")===v);
+  }).filter(r=>!(skip&&done[r.id]));
+}
+function fillRotaSel(){
+  const base=ALL().filter(r=>r.endereco);
+  const nc={};base.forEach(r=>{if(r.niche)nc[r.niche]=(nc[r.niche]||0)+1});
+  document.getElementById("r_niche").innerHTML='<option value="">Todos os nichos</option>'+Object.keys(nc).sort().map(n=>`<option value="${esc(n)}">${esc(n)} (${nc[n]})</option>`).join('');
+  const cc={},bc={};base.forEach(r=>{if(r.city)cc[r.city]=1;if(r.bairro&&!bc[r.bairro])bc[r.bairro]=r.city||""});
+  let o='<option value="">Todas as regiões</option>';
+  Object.keys(cc).sort().forEach(c=>o+=`<option value="c::${esc(c)}">${esc(c)} — inteira</option>`);
+  Object.keys(bc).sort().forEach(b=>o+=`<option value="b::${esc(b)}">${esc(b)}${bc[b]?" ("+esc(bc[b])+")":""}</option>`);
+  document.getElementById("r_area").innerHTML=o;
+}
+function centroid(list){let la=0,lo=0;list.forEach(r=>{la+=r.lat;lo+=r.lon});return{lat:la/list.length,lon:lo/list.length};}
+function montarRota(){
+  const N=Math.max(1,Math.min(10,parseInt(document.getElementById("r_n").value,10)||10));
+  const cands=rotaCands(), out=document.getElementById("r_out");
+  if(!cands.length){rotaAtual=[];out.innerHTML='<div class="hint" style="margin-top:10px">Nenhum contato com endereço nesse filtro. Adiciona contatos com endereço primeiro.</div>';return;}
+  const com=cands.filter(hasCoord), sem=cands.filter(r=>!hasCoord(r));
+  const ordered=[];
+  if(com.length){
+    let cur=rStart||centroid(com); const pool=com.slice();
+    while(pool.length&&ordered.length<N){
+      pool.sort((a,b)=>hav(cur,a)-hav(cur,b));
+      const nx=pool.shift(); nx._d=hav(cur,nx); ordered.push(nx); cur=nx;
+    }
+  }
+  sem.forEach(r=>{if(ordered.length<N){r._d=null;ordered.push(r);}});
+  rotaAtual=ordered;
+  let tot=0;ordered.forEach(r=>{if(r._d)tot+=r._d});
+  out.innerHTML='<div id="rlist" style="margin-top:12px">'+ordered.map((r,i)=>`<div class="rstop${done[r.id]?' rdone':''}" data-id="${esc(r.id)}"><input type="checkbox" class="rcbx" ${done[r.id]?'checked':''} title="Marcar que já passei aqui"><b class="n">${i+1}.</b><span><b>${esc(r.client)}</b><small>${esc([r.endereco,r.bairro,r.city].filter(Boolean).join(" · "))}${hasCoord(r)?'':' · sem 📍 (o Circuit acha pelo endereço)'}</small></span>${r._d!=null?`<span class="rkm">${r._d<1?Math.round(r._d*1000)+" m":r._d.toFixed(1)+" km"}</span>`:''}</div>`).join('')+'</div>'
+    +`<div class="formbtns"><button id="r_csv" class="pri">📲 Mandar pro Circuit</button><button id="r_maps">🧭 Abrir no Google Maps</button><button id="r_ret">📅 Agendar retorno dos visitados</button><span class="hint">${ordered.length} parada(s)${tot?` · ~${tot.toFixed(1)} km em linha reta`:''}</span></div>`
+    +'<div class="hint" style="margin-top:8px">Conforme passa em cada lugar, marca a <b>caixinha ✓</b> da parada — fica salva como contatada, igual no CT. No fim do dia, <b>📅 Agendar retorno</b> joga esses pra voltar noutra data. <b>📲 Mandar pro Circuit</b> abre o compartilhar no celular; <b>🧭 Google Maps</b> abre a rota pronta.</div>';
+  document.getElementById("r_csv").addEventListener("click",enviarCsvCircuit);
+  document.getElementById("r_maps").addEventListener("click",()=>window.open(mapsUrl(),"_blank"));
+  document.getElementById("r_ret").addEventListener("click",agendarRetornoRota);
+  document.getElementById("rlist").addEventListener("change",e=>{
+    if(!e.target.classList.contains("rcbx"))return;
+    const row=e.target.closest(".rstop"), id=row.dataset.id;
+    if(e.target.checked)done[id]=1; else delete done[id];
+    localStorage.setItem("giscrm",JSON.stringify(done));
+    row.classList.toggle("rdone",e.target.checked);
+    buildChips(); view();
+  });
+}
+function agendarRetornoRota(){
+  const visit=(rotaAtual||[]).filter(r=>done[r.id]);
+  if(!visit.length){alert("Primeiro marca a caixinha ✓ dos lugares que você já visitou nessa rota. Depois clica em Agendar retorno.");return;}
+  const days=parseInt(prompt(`Você marcou ${visit.length} lugar(es) como visitado(s) ✓. Voltar a falar com eles em quantos dias?`,"20"),10);
+  if(!days||days<1)return;
+  const now=new Date(), fut=new Date(now.getTime()+days*86400000);
+  const f=d=>String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0");
+  const hoje=f(now), ret=f(fut);
+  visit.forEach(r=>{overrides[r.id]=Object.assign({},overrides[r.id]||{},{date_last:hoje,date_return:ret});});
+  localStorage.setItem("giscrm_over",JSON.stringify(overrides));
+  buildChips(); view();
+  const m=document.getElementById("r_msg"); if(m){m.textContent=`✓ ${visit.length} agendado(s) pra voltar dia ${ret} — aparecem em "retorno mais próximo"`; setTimeout(()=>m.textContent="",5000);}
+}
+function csvCircuitText(){
+  const q=s=>'"'+(""+(s||"")).replace(/"/g,'""')+'"';
+  const lines=[["Address line 1","Address line 2","City","State","Zip","Country","Notes"].join(",")];
+  rotaAtual.forEach(r=>lines.push([r.endereco,r.bairro,r.city,"SC",r.cep,"Brazil",r.client+(r.wa_disp?" · "+r.wa_disp:"")].map(q).join(",")));
+  return "\ufeff"+lines.join("\n");
+}
+function baixarCsvCircuit(){
+  if(!rotaAtual.length)return;
+  const f=new Date(),dd=String(f.getDate()).padStart(2,"0")+"."+String(f.getMonth()+1).padStart(2,"0");
+  const blob=new Blob([csvCircuitText()],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="rota-circuit-"+dd+".csv";a.click();
+}
+async function enviarCsvCircuit(){
+  if(!rotaAtual.length)return;
+  const f=new Date(),dd=String(f.getDate()).padStart(2,"0")+"."+String(f.getMonth()+1).padStart(2,"0");
+  try{
+    const file=new File([csvCircuitText()],"rota-circuit-"+dd+".csv",{type:"text/csv"});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],title:"Rota do dia"});return;}
+      catch(e){if(e&&e.name==="AbortError")return;}
+    }
+  }catch(e){}
+  baixarCsvCircuit();
+}
+function mapsUrl(){
+  if(!rotaAtual.length)return"";
+  const ad=r=>encodeURIComponent([r.endereco,r.bairro,r.city,"SC"].filter(Boolean).join(", "));
+  const st=rotaAtual.slice(0,10), dest=ad(st[st.length-1]), way=st.slice(0,-1).map(ad).join("|");
+  let u="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+dest;
+  if(way)u+="&waypoints="+way;
+  return u;
+}
+async function geoAddr(end,bairro,city){
+  const q=[end,bairro,city,"Santa Catarina","Brazil"].filter(Boolean).join(", ");
+  try{
+    const r=await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&q="+encodeURIComponent(q));
+    const d=await r.json();
+    if(d&&d[0])return{lat:+d[0].lat,lon:+d[0].lon,cep:(d[0].address||{}).postcode||""};
+  }catch(e){}
+  try{
+    const r=await fetch("https://photon.komoot.io/api/?limit=1&q="+encodeURIComponent(q));
+    const d=(await r.json()).features;
+    if(d&&d[0])return{lat:d[0].geometry.coordinates[1],lon:d[0].geometry.coordinates[0],cep:(d[0].properties||{}).postcode||""};
+  }catch(e){}
+  return null;
+}
+function setCoord(id,g){
+  const a=added.find(x=>x.id===id);
+  if(a){a.lat=g.lat;a.lon=g.lon;if(!a.cep&&g.cep)a.cep=g.cep;saveAdded();}
+  else{overrides[id]=Object.assign({},overrides[id]||{},{lat:g.lat,lon:g.lon});localStorage.setItem("giscrm_over",JSON.stringify(overrides));}
+}
+async function localizarPendentes(){
+  const pend=rotaCands().filter(r=>!hasCoord(r)), m=document.getElementById("r_msg");
+  if(!pend.length){m.textContent="todo mundo já tem 📍";setTimeout(()=>m.textContent="",2500);return;}
+  let ok=0;
+  for(let i=0;i<pend.length;i++){
+    m.textContent=`📍 localizando ${i+1} de ${pend.length}...`;
+    const g=await geoAddr(pend[i].endereco,pend[i].bairro,pend[i].city);
+    if(g){setCoord(pend[i].id,g);ok++;}
+    await new Promise(res=>setTimeout(res,1150));
+  }
+  m.textContent=`📍 ${ok} de ${pend.length} localizados`;setTimeout(()=>m.textContent="",3500);
+  view();
+}
+document.getElementById("rotaBtn").addEventListener("click",()=>{
+  const p=document.getElementById("rotaPanel");p.hidden=!p.hidden;
+  if(!p.hidden){fillRotaSel();document.getElementById("r_out").innerHTML="";window.scrollTo({top:0,behavior:"smooth"});}
+});
+document.getElementById("r_close").addEventListener("click",()=>{document.getElementById("rotaPanel").hidden=true;});
+document.getElementById("r_build").addEventListener("click",montarRota);
+document.getElementById("r_loc").addEventListener("click",localizarPendentes);
+document.getElementById("r_gps").addEventListener("click",()=>{
+  const b=document.getElementById("r_gps");
+  if(rStart){rStart=null;b.classList.remove("on");b.textContent="📍 Partir de onde eu estou";return;}
+  if(!navigator.geolocation){alert("Esse navegador não deixa pegar o GPS. Escolhe a região no filtro que eu parto do centro dela.");return;}
+  b.textContent="📍 pegando o GPS...";
+  navigator.geolocation.getCurrentPosition(
+    p=>{rStart={lat:p.coords.latitude,lon:p.coords.longitude};b.classList.add("on");b.textContent="📍 Partindo de onde você está";},
+    ()=>{b.textContent="📍 Partir de onde eu estou";alert("Não consegui pegar tua localização. Escolhe a região no filtro que eu parto do centro dela.");}
+  );
+});
+buildChips(); view(); updateFire();
+</script></body></html>
