@@ -40,6 +40,13 @@ button.pri{background:linear-gradient(90deg,var(--sun1),var(--sun2));color:#111;
 .rstop.rdone>span>b{text-decoration:line-through}
 .rcbx{width:20px;height:20px;accent-color:var(--sun1);cursor:pointer;flex:0 0 auto;margin-top:1px}
 .rkm{margin-left:auto;color:var(--mut);font-size:12px;white-space:nowrap}
+#histPanel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:6px 0 14px}
+#histPanel h3{margin:0 0 4px;font-size:15px}
+.hitem{display:flex;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.hitem .hl{flex:1;line-height:1.35}
+.hitem small{color:var(--mut)}
+.hitem button{padding:6px 11px;font-size:12.5px;white-space:nowrap}
+#undoBtn{border-color:#3a5a3a}
 table{width:100%;border-collapse:collapse}
 th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line);vertical-align:middle}
 th{position:sticky;top:96px;background:var(--bg);color:var(--mut);font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;z-index:5;cursor:pointer;white-space:nowrap}
@@ -125,6 +132,8 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
     <button id="setBtn">⚙️ WhatsApp</button>
     <button id="hideDone">👁️ Ocultar contatados</button>
     <button id="csvBtn">⬇️ CSV</button>
+    <button id="undoBtn">↶ Desfazer</button>
+    <button id="histBtn">🕘 Histórico</button>
     <button id="saveState" class="pri">💾 Salvar progresso</button>
     <button id="loadStateBtn">📂 Carregar progresso</button>
     <input type="file" id="loadState" accept="application/json" style="display:none">
@@ -147,7 +156,7 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
     <label><span>Cidade</span><input id="f_city" placeholder="Florianópolis / São José" autocomplete="off"></label>
     <label><span>Endereço (rua, número)</span><input id="f_end" placeholder="Rua Fulano, 123" autocomplete="off"></label>
     <label><span>Bairro</span><input id="f_bairro" placeholder="Kobrasol" autocomplete="off"></label>
-    <label><span>Nicho</span><select id="f_niche"><option value="">—</option><option>Gastronomia</option><option>Barbearia</option><option>Salão de beleza</option><option>Estética automotiva</option><option>Pet</option><option>Confeitaria</option><option>Moda</option><option>Academia</option><option>Saúde</option><option>Outro</option></select></label>
+    <label><span>Nicho <small class="mut">— escolhe ou digita um novo</small></span><input id="f_niche" list="nicheList" placeholder="Pizzaria, Barbearia, Restaurante..." autocomplete="off"><datalist id="nicheList"></datalist></label>
     <label><span>Responsável</span><select id="f_resp"><option>Gislaine</option><option>Juliana</option><option value="">—</option></select></label>
     <label><span>Status</span><select id="f_status"><option value="Novo">Novo</option><option value="Hot">Hot</option><option value="Negotiating">Negociando</option><option value="Cold">Cold</option><option value="Freeze">Freeze</option></select></label>
     <label><span>Último contato</span><input id="f_last" placeholder="DD.MM" autocomplete="off"></label>
@@ -176,6 +185,15 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
   </div>
   <label class="hint" style="display:flex;align-items:center;gap:6px;margin-top:10px"><input type="checkbox" id="r_skip" checked style="accent-color:var(--sun1)"> pular quem já tem ✓ (contatado)</label>
   <div id="r_out"></div>
+</div>
+<div id="histPanel" hidden>
+  <h3>🕘 Histórico de segurança</h3>
+  <div class="hint" style="margin-bottom:6px">Cada mudança vira um ponto de retorno. Se algo deu errado, volte pra como estava — seus contatos não se perdem. (Fica salvo neste aparelho.)</div>
+  <div id="histList"></div>
+  <div class="formbtns">
+    <button id="histClose">Fechar</button>
+    <button id="histClear">🧹 Limpar histórico</button>
+  </div>
 </div>
 <div id="setPanel" hidden>
   <h3>Ajustes do WhatsApp</h3>
@@ -385,7 +403,7 @@ document.getElementById("saveContact").addEventListener("click",()=>{
   document.getElementById("f_status").value="Novo";document.getElementById("f_niche").value="";
   const msg=document.getElementById("addMsg"); msg.textContent="✓ "+nome+" adicionado";
   setTimeout(()=>msg.textContent="",2500);
-  buildChips(); view(); document.getElementById("f_nome").focus();
+  buildChips(); view(); fillNicheList(); document.getElementById("f_nome").focus();
 });
 document.getElementById("tb").addEventListener("click",e=>{
   const waL=e.target.closest("a.wa"); if(waL){ if(isMobile)return; e.preventDefault();openIn("gfwa",waL.href);return;}
@@ -666,5 +684,86 @@ document.getElementById("r_gps").addEventListener("click",()=>{
     ()=>{b.textContent="📍 Partir de onde eu estou";alert("Não consegui pegar tua localização. Escolhe a região no filtro que eu parto do centro dela.");}
   );
 });
+// ===== histórico de segurança (desfazer) =====
+let hist=[]; try{hist=JSON.parse(localStorage.getItem("giscrm_hist")||"[]")}catch(e){hist=[]}
+let _snapBusy=false, _histPending=false, _histBefore=null;
+const _KEYS=["giscrm","giscrm_over","giscrm_added"];
+const _setLS=localStorage.setItem.bind(localStorage);
+function readLS(){let d={},o={},a=[];try{d=JSON.parse(localStorage.getItem("giscrm")||"{}")}catch(e){}try{o=JSON.parse(localStorage.getItem("giscrm_over")||"{}")}catch(e){}try{a=JSON.parse(localStorage.getItem("giscrm_added")||"[]")}catch(e){}return{done:d,overrides:o,added:a};}
+function saveHist(){try{_setLS("giscrm_hist",JSON.stringify(hist));}catch(e){hist=hist.slice(-12);try{_setLS("giscrm_hist",JSON.stringify(hist));}catch(e2){}}}
+function diffLabel(o,n){
+  const oa=(o.added||[]).length, na=(n.added||[]).length;
+  if(na>oa)return "adicionou "+((n.added[na-1]||{}).client||"um contato");
+  if(na<oa)return "excluiu um contato";
+  const od=Object.keys(o.done||{}).length, nd=Object.keys(n.done||{}).length;
+  if(nd>od)return "marcou "+(nd-od)+" como contatado";
+  if(nd<od)return "desmarcou contatado";
+  const oo=o.overrides||{}, no=n.overrides||{}; let ret=0,al=0;
+  for(const k in no){const a=oo[k]||{},b=no[k]||{}; if(b.date_return&&b.date_return!==a.date_return)ret++; if(b.alerta&&b.alerta!==a.alerta)al++;}
+  if(ret>0)return "agendou retorno de "+ret;
+  if(al>0)return "marcou um alerta";
+  return "mudança nos contatos";
+}
+localStorage.setItem=function(k,v){
+  if(!_snapBusy && _KEYS.indexOf(k)>=0){
+    if(!_histPending){ _histBefore=readLS(); _histPending=true;
+      Promise.resolve().then(()=>{ _histPending=false; const after=readLS(); const lb=diffLabel(_histBefore,after);
+        hist.push({label:lb,ts:Date.now(),st:_histBefore}); if(hist.length>40)hist=hist.slice(-40);
+        _snapBusy=true; saveHist(); _snapBusy=false; updateUndo();
+      });
+    }
+    return _setLS(k,v);
+  }
+  return _setLS(k,v);
+};
+function restoreState(st){
+  _snapBusy=true;
+  done=st.done?JSON.parse(JSON.stringify(st.done)):{};
+  overrides=st.overrides?JSON.parse(JSON.stringify(st.overrides)):{};
+  added=st.added?JSON.parse(JSON.stringify(st.added)):[];
+  _setLS("giscrm",JSON.stringify(done));
+  _setLS("giscrm_over",JSON.stringify(overrides));
+  _setLS("giscrm_added",JSON.stringify(added));
+  _snapBusy=false;
+  buildChips(); view(); fillNicheList();
+  const rp=document.getElementById("rotaPanel");
+  if(rp && !rp.hidden){fillRotaSel(); if(rotaAtual&&rotaAtual.length)montarRota();}
+}
+function updateUndo(){
+  const u=document.getElementById("undoBtn"), h=document.getElementById("histBtn");
+  if(u)u.textContent="↶ Desfazer"+(hist.length?" ("+hist.length+")":"");
+  if(h)h.textContent="🕘 Histórico"+(hist.length?" ("+hist.length+")":"");
+}
+function undoLast(){
+  if(!hist.length){alert("Ainda não há nada pra desfazer.");return;}
+  const hh=hist.pop(); _snapBusy=true; saveHist(); _snapBusy=false;
+  restoreState(hh.st); updateUndo();
+  const m=document.getElementById("stateMsg"); if(m){m.textContent="↶ desfeito: "+hh.label; setTimeout(()=>m.textContent="",3500);}
+}
+function fmtHora(ts){try{const d=new Date(ts),diff=(Date.now()-ts)/1000; if(diff<60)return "agora mesmo"; if(diff<3600)return "há "+Math.floor(diff/60)+" min"; return "às "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}catch(e){return"";}}
+function renderHist(){
+  const box=document.getElementById("histList");
+  if(!hist.length){box.innerHTML='<div class="hint" style="padding:10px 0">Nada registrado ainda. Conforme você mexe (adiciona contato, marca visitado, agenda retorno), cada passo aparece aqui pra poder voltar.</div>';return;}
+  box.innerHTML=hist.map((h,i)=>`<div class="hitem"><span class="hl"><b>${esc(h.label)}</b><br><small>${fmtHora(h.ts)}</small></span><button data-h="${i}">↩︎ voltar pra antes disso</button></div>`).reverse().join('');
+}
+document.getElementById("undoBtn").addEventListener("click",undoLast);
+document.getElementById("histBtn").addEventListener("click",()=>{const p=document.getElementById("histPanel");p.hidden=!p.hidden;if(!p.hidden){renderHist();window.scrollTo({top:0,behavior:"smooth"});}});
+document.getElementById("histClose").addEventListener("click",()=>{document.getElementById("histPanel").hidden=true;});
+document.getElementById("histClear").addEventListener("click",()=>{if(confirm("Limpar o histórico? Isso NÃO altera seus contatos, só apaga os pontos de retorno guardados.")){hist=[];_snapBusy=true;saveHist();_snapBusy=false;updateUndo();renderHist();}});
+document.getElementById("histList").addEventListener("click",e=>{
+  const b=e.target.closest("[data-h]"); if(!b)return;
+  const i=+b.dataset.h, h=hist[i];
+  if(!confirm('Voltar tudo pra ANTES de "'+h.label+'"? As mudanças feitas depois disso serão desfeitas.'))return;
+  restoreState(h.st); hist=hist.slice(0,i); _snapBusy=true; saveHist(); _snapBusy=false;
+  updateUndo(); renderHist();
+  const m=document.getElementById("stateMsg"); if(m){m.textContent="↩︎ voltou pra antes de: "+h.label; setTimeout(()=>m.textContent="",3500);}
+});
+// ===== nichos dinâmicos (reusa os que já existem, cria novos) =====
+const NICHE_BASE=["Gastronomia","Restaurante","Pizzaria","Hamburgueria","Confeitaria","Cafeteria","Sorveteria","Padaria","Barbearia","Salão de beleza","Estética automotiva","Lava-rápido","Pet","Academia","Moda","Farmácia","Mercado","Odontologia","Saúde"];
+function fillNicheList(){
+  const s=new Set(NICHE_BASE); ALL().forEach(r=>{if(r.niche)s.add(r.niche);});
+  const dl=document.getElementById("nicheList"); if(dl)dl.innerHTML=[...s].sort((a,b)=>a.localeCompare(b)).map(n=>`<option value="${esc(n)}"></option>`).join('');
+}
+fillNicheList(); updateUndo();
 buildChips(); view(); updateFire();
 </script></body></html>
