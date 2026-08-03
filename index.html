@@ -540,6 +540,7 @@ document.getElementById("loadState").addEventListener("change",e=>{
 // ---- rota do dia / Circuit ----
 function hasCoord(r){return typeof r.lat==="number"&&typeof r.lon==="number";}
 function hav(a,b){const d=x=>x*Math.PI/180;const h=Math.sin(d(b.lat-a.lat)/2)**2+Math.cos(d(a.lat))*Math.cos(d(b.lat))*Math.sin(d(b.lon-a.lon)/2)**2;return 12742*Math.asin(Math.sqrt(h));}
+const IS_IOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
 let rStart=null, rotaAtual=[];
 function rotaCands(){
   const ni=document.getElementById("r_niche").value, ar=document.getElementById("r_area").value, skip=document.getElementById("r_skip").checked;
@@ -576,9 +577,10 @@ function montarRota(){
   rotaAtual=ordered;
   let tot=0;ordered.forEach(r=>{if(r._d)tot+=r._d});
   out.innerHTML='<div id="rlist" style="margin-top:12px">'+ordered.map((r,i)=>`<div class="rstop${done[r.id]?' rdone':''}" data-id="${esc(r.id)}"><input type="checkbox" class="rcbx" ${done[r.id]?'checked':''} title="Marcar que já passei aqui"><b class="n">${i+1}.</b><span><b>${esc(r.client)}</b><small>${esc([r.endereco,r.bairro,r.city].filter(Boolean).join(" · "))}${hasCoord(r)?'':' · sem 📍 (o Circuit acha pelo endereço)'}</small></span>${r._d!=null?`<span class="rkm">${r._d<1?Math.round(r._d*1000)+" m":r._d.toFixed(1)+" km"}</span>`:''}</div>`).join('')+'</div>'
-    +`<div class="formbtns"><button id="r_csv" class="pri">📲 Mandar pro Circuit</button><button id="r_maps">🧭 Abrir no Google Maps</button><button id="r_ret">📅 Agendar retorno dos visitados</button><span class="hint">${ordered.length} parada(s)${tot?` · ~${tot.toFixed(1)} km em linha reta`:''}</span></div>`
-    +'<div class="hint" style="margin-top:8px">Conforme passa em cada lugar, marca a <b>caixinha ✓</b> da parada — fica salva como contatada, igual no CT. No fim do dia, <b>📅 Agendar retorno</b> joga esses pra voltar noutra data. <b>📲 Mandar pro Circuit</b> abre o compartilhar no celular; <b>🧭 Google Maps</b> abre a rota pronta.</div>';
-  document.getElementById("r_csv").addEventListener("click",enviarCsvCircuit);
+    +`<div class="formbtns"><button id="r_copy" class="pri">📋 Copiar pro Spoke (Circuit)</button><button id="r_maps">🧭 Abrir no Google Maps</button>${IS_IOS?'':'<button id="r_csv">⬇️ Planilha (Android/PC)</button>'}<button id="r_ret">📅 Agendar retorno dos visitados</button><span class="hint">${ordered.length} parada(s)${tot?` · ~${tot.toFixed(1)} km em linha reta`:''}</span></div>`
+    +'<div class="hint" style="margin-top:8px"><b>📋 Copiar</b> monta a lista na ordem certa. Depois abre o <b>Spoke</b> (é o nome novo do Circuit), toca em <b>➕ adicionar parada</b> e <b>cola</b> — ele pega todas de uma vez. <i>No iPhone o Spoke não lê planilha, é colando mesmo.</i> Conforme passa em cada lugar, marca a <b>caixinha ✓</b>; no fim do dia, <b>📅 Agendar retorno</b>.</div>';
+  document.getElementById("r_copy").addEventListener("click",copiarSpoke);
+  const csvB=document.getElementById("r_csv"); if(csvB)csvB.addEventListener("click",baixarCsvCircuit);
   document.getElementById("r_maps").addEventListener("click",()=>window.open(mapsUrl(),"_blank"));
   document.getElementById("r_ret").addEventListener("click",agendarRetornoRota);
   document.getElementById("rlist").addEventListener("change",e=>{
@@ -615,17 +617,28 @@ function baixarCsvCircuit(){
   const blob=new Blob([csvCircuitText()],{type:"text/csv;charset=utf-8"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="rota-circuit-"+dd+".csv";a.click();
 }
-async function enviarCsvCircuit(){
+function textoParadas(){
+  return rotaAtual.map(r=>[r.endereco,r.bairro,r.city,"SC"].filter(Boolean).join(", ")).join("\n");
+}
+async function copiarSpoke(){
   if(!rotaAtual.length)return;
-  const f=new Date(),dd=String(f.getDate()).padStart(2,"0")+"."+String(f.getMonth()+1).padStart(2,"0");
-  try{
-    const file=new File([csvCircuitText()],"rota-circuit-"+dd+".csv",{type:"text/csv"});
-    if(navigator.canShare&&navigator.canShare({files:[file]})){
-      try{await navigator.share({files:[file],title:"Rota do dia"});return;}
-      catch(e){if(e&&e.name==="AbortError")return;}
-    }
-  }catch(e){}
-  baixarCsvCircuit();
+  const t=textoParadas(); let ok=false;
+  try{await navigator.clipboard.writeText(t); ok=true;}
+  catch(e){
+    try{
+      const ta=document.createElement("textarea"); ta.value=t;
+      ta.style.position="fixed"; ta.style.opacity="0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      ok=document.execCommand("copy"); document.body.removeChild(ta);
+    }catch(e2){}
+  }
+  const b=document.getElementById("r_copy"), m=document.getElementById("r_msg");
+  if(ok){
+    if(b){b.textContent="✓ Copiado! Abre o Spoke, ➕ e cola"; setTimeout(()=>{b.textContent="📋 Copiar pro Spoke (Circuit)";},6000);}
+    if(m){m.textContent="✓ "+rotaAtual.length+" endereço(s) na área de transferência"; setTimeout(()=>m.textContent="",6000);}
+  }else{
+    prompt("Não consegui copiar sozinho. Segura no texto e copia daqui:", t);
+  }
 }
 function mapsUrl(){
   if(!rotaAtual.length)return"";
