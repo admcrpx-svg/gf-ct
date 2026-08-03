@@ -40,6 +40,15 @@ button.pri{background:linear-gradient(90deg,var(--sun1),var(--sun2));color:#111;
 .rstop.rdone>span>b{text-decoration:line-through}
 .rcbx{width:20px;height:20px;accent-color:var(--sun1);cursor:pointer;flex:0 0 auto;margin-top:1px}
 .rkm{margin-left:auto;color:var(--mut);font-size:12px;white-space:nowrap}
+.trash{color:#ff7b6b;cursor:pointer;font-size:15px;opacity:.7}
+.trash:hover{opacity:1}
+td.delcell{text-align:right;width:34px}
+.obs{color:#ffd479;font-size:11.5px;margin-top:2px;cursor:pointer;font-weight:400}
+.obsadd{color:var(--mut);opacity:.45;cursor:pointer;font-size:12px;margin-left:6px}
+.obsadd:hover{opacity:1}
+.robs{cursor:pointer;font-size:14px;opacity:.7;margin-left:8px;flex:0 0 auto}
+.robs:hover{opacity:1}
+.obstxt{display:block;color:#ffd479;font-size:11px;font-weight:400}
 #histPanel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:6px 0 14px}
 #histPanel h3{margin:0 0 4px;font-size:15px}
 .hitem{display:flex;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
@@ -104,6 +113,8 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
   a.wa{background:#123a24;color:#8ff0b0;border:1px solid #1f5a38}
   a.ig{color:var(--sun2)}
   td .selbox,td .cbx{width:24px;height:24px}
+  td.delcell{justify-content:flex-end;width:auto}
+  .trash{font-size:19px;padding:4px}
   #fireModal .fmbox{max-width:100%}
   #fmMsg{font-size:16px}
 }
@@ -144,6 +155,7 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
     <div class="chips" id="respChips"></div>
     <span class="mut" style="margin:0 4px">·</span>
     <div class="chips" id="statChips"></div>
+    <span class="chip" id="rotaChip" hidden>🗺️ Última rota</span>
     <span class="count" id="count"></span>
   </div>
 </div>
@@ -220,7 +232,7 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
 <table><thead><tr>
 <th title="Selecionar p/ disparo">🚀</th><th title="Já contatei">✓</th><th data-k="client">Cliente</th><th>Instagram</th><th>WhatsApp</th>
 <th data-k="city">Cidade</th><th data-k="resp">Dono</th><th data-k="status">Status</th>
-<th data-k="date_last">Últ. contato</th><th data-k="rk">Retorno</th><th>Valor</th>
+<th data-k="date_last">Últ. contato</th><th data-k="rk">Retorno</th><th>Valor</th><th title="Excluir"></th>
 </tr></thead><tbody id="tb"></tbody></table>
 <div id="fireModal" hidden>
   <div class="fmbox">
@@ -258,7 +270,10 @@ let waTmpl=localStorage.getItem("giscrm_watmpl")||"Opa {nome}, tudo bem? Aqui é
 const isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||window.matchMedia("(max-width:680px)").matches;
 let sel=new Set();
 let overrides={}; try{overrides=JSON.parse(localStorage.getItem("giscrm_over")||"{}")}catch(e){overrides={}}
-let fResp="Todos", fStat="Todos", fHide=false, fAlerta=false, sortK="ret", q="";
+let removed=[]; try{removed=JSON.parse(localStorage.getItem("giscrm_removed")||"[]")}catch(e){removed=[]}
+function saveRemoved(){localStorage.setItem("giscrm_removed",JSON.stringify(removed));}
+let lastRoute=null; try{lastRoute=JSON.parse(localStorage.getItem("giscrm_lastroute")||"null")}catch(e){lastRoute=null}
+let fResp="Todos", fStat="Todos", fHide=false, fAlerta=false, fRota=false, sortK="ret", q="";
 const statOrder={Hot:0,Negotiating:1,Novo:2,Freeze:3,Cold:4,"—":5};
 const TODAY=new Date(); const todayKey=(TODAY.getMonth()+1)*31+TODAY.getDate();
 
@@ -267,7 +282,7 @@ function waFull(s){let d=(""+(s||"")).replace(/\D/g,"");if(!d)return"";if(d.leng
 function waDisp(full){if(!full)return"";let x=full.startsWith("55")?full.slice(2):full;let ddd=x.slice(0,2),rest=x.slice(2);if(rest.length===9)return`(${ddd}) ${rest.slice(0,5)}-${rest.slice(5)}`;if(rest.length===8)return`(${ddd}) ${rest.slice(0,4)}-${rest.slice(4)}`;return`(${ddd}) ${rest}`;}
 function retKey(s){const m=(""+(s||"")).match(/^(\d{1,2})\.(\d{1,2})/);if(!m)return 99999;return (+m[2])*31+(+m[1]);}
 function enrich(r){r.ig=r.handle?("https://instagram.com/"+r.handle):"";r.wa_disp=waDisp(r.wa);r.rk=retKey(r.date_return);r.s=[r.client,r.person,r.handle,r.city,r.niche,r.bairro,r.endereco,r.status,r.resp].join(" ").toLowerCase();return r;}
-function ALL(){return DATA.concat(added).map(r=>{const o=overrides[r.id];if(!o)return r;const m=Object.assign({},r,o);m.rk=retKey(m.date_return);return m;});}
+function ALL(){return DATA.concat(added).filter(r=>removed.indexOf(r.id)<0).map(r=>{const o=overrides[r.id];if(!o)return r;const m=Object.assign({},r,o);m.rk=retKey(m.date_return);return m;});}
 function firstName(s){s=(""+(s||"")).trim();return s?s.split(/\s+/)[0]:"";}
 function waHref(r){
   let base = isMobile ? `https://wa.me/${r.wa}` : (waMode==="app" ? `whatsapp://send?phone=${r.wa}` : waMode==="web" ? `https://web.whatsapp.com/send?phone=${r.wa}` : `https://wa.me/${r.wa}`);
@@ -295,10 +310,19 @@ function buildChips(){
   const order=['Todos','Novo','Hot','Negotiating','Cold','Freeze'];
   document.getElementById("statChips").innerHTML=
     order.filter(v=>v==='Todos'||sc[v]).map(v=>`<span class="chip" data-t="stat" data-v="${v}">${v==='Negotiating'?'Negoc.':v}${v!=='Todos'?' '+(sc[v]||0):''}</span>`).join('');
+  const rc2=document.getElementById("rotaChip");
+  if(rc2){
+    if(lastRoute&&lastRoute.ids&&lastRoute.ids.length){
+      const n=lastRoute.ids.filter(id=>ALL().some(r=>r.id===id)).length;
+      rc2.hidden=false; rc2.textContent="🗺️ Última rota ("+n+")"; rc2.classList.toggle("on",fRota);
+    }else{rc2.hidden=true;}
+  }
   syncChips();
 }
+document.getElementById("rotaChip").addEventListener("click",()=>{fRota=!fRota;buildChips();view();});
 function syncChips(){
   document.querySelectorAll('.chip').forEach(c=>{
+    if(!c.dataset.t)return;
     const on=(c.dataset.t==='resp'&&c.dataset.v===fResp)||(c.dataset.t==='stat'&&c.dataset.v===fStat);
     c.classList.toggle('on',on);
   });
@@ -310,6 +334,7 @@ function currentRows(){
     if(fStat!=="Todos"&&r.status!==fStat)return false;
     if(fAlerta&&!r.alerta)return false;
     if(fHide&&done[r.id])return false;
+    if(fRota&&lastRoute&&lastRoute.ids&&lastRoute.ids.indexOf(r.id)<0)return false;
     if(q&&!r.s.includes(q))return false;
     return true;
   });
@@ -333,13 +358,13 @@ function view(){
     const late=(r.rk<99999&&r.rk<todayKey&&r.status!=="Novo")?" late":"";
     const ret=r.date_return?`<span class="ret${late}">${esc(r.date_return)}</span>`:'<span class="mut">—</span>';
     const rsp=r.resp?`<span class="rsp ${r.resp}">${r.resp}</span>`:'<span class="mut">—</span>';
-    const del=r.source==='Manual'?`<span class="mine" data-del="${r.id}" title="Excluir este contato">excluir</span>`:'';
     const flag=r.alerta?`<span class="flag" data-flag="${r.id}" title="Clique pra tirar o alerta">⚑ ${esc(r.alerta)}</span>`:'';
     const psub=[r.person,r.niche,r.bairro].filter(Boolean).join(" · ");const person=psub?`<small class="mut">${esc(psub)}</small>`:'';
+    const obsH=r.obs?`<div class="obs" data-obs="${r.id}" title="Editar observação">📝 ${esc(r.obs)}</div>`:`<span class="obsadd" data-obs="${r.id}" title="Anotar observação">📝</span>`;
     return `<tr class="${done[r.id]?'done':''}${sel.has(r.id)?' selrow':''}" data-id="${r.id}">
       <td data-label="🚀 Disparo"><input class="selbox" type="checkbox" ${sel.has(r.id)?'checked':''}></td>
       <td data-label="✓ Contatei"><input class="cbx" type="checkbox" ${done[r.id]?'checked':''}></td>
-      <td class="nm">${esc(r.client)}${del}${flag}${person}</td>
+      <td class="nm">${esc(r.client)}${flag}${person}${obsH}</td>
       <td data-label="Instagram">${ig}</td><td data-label="WhatsApp">${wa}</td>
       <td class="mut" data-label="Cidade">${esc(r.city)||'—'}</td>
       <td data-label="Dono">${rsp}</td>
@@ -347,6 +372,7 @@ function view(){
       <td class="mut" data-label="Últ. contato">${esc(r.date_last)||'—'}</td>
       <td data-label="Retorno">${ret}</td>
       <td class="mut" data-label="Valor">${r.value&&r.value!=='R$0.00'&&r.value!=='R$0,00'?esc(r.value):'—'}</td>
+      <td class="delcell" data-label=""><span class="trash" data-del="${r.id}" title="Excluir este contato">🗑️</span></td>
     </tr>`;
   }).join('');
   document.getElementById("count").textContent=`${rows.length} de ${ALL().length} contatos`;
@@ -409,15 +435,34 @@ document.getElementById("tb").addEventListener("click",e=>{
   const waL=e.target.closest("a.wa"); if(waL){ if(isMobile)return; e.preventDefault();openIn("gfwa",waL.href);return;}
   const igL=e.target.closest("a.ig"); if(igL){ if(isMobile)return; e.preventDefault();openIn("gfig",igL.href);return;}
   const fg=e.target.closest("[data-flag]"); if(fg){const id=fg.dataset.flag; if(confirm("Tirar o alerta deste contato?")){overrides[id]=Object.assign({},overrides[id]||{},{alerta:""});localStorage.setItem("giscrm_over",JSON.stringify(overrides));view();} return;}
+  const ob=e.target.closest("[data-obs]"); if(ob){editObs(ob.dataset.obs);return;}
   const d=e.target.closest("[data-del]"); if(!d)return;
-  const id=d.dataset.del; const r=added.find(x=>x.id===id);
-  if(r&&confirm(`Excluir "${r.client}"?`)){added=added.filter(x=>x.id!==id);saveAdded();buildChips();view();}
+  const id=d.dataset.del; const rec=ALL().find(x=>x.id===id); if(!rec)return;
+  if(!confirm(`Excluir "${rec.client}"?`))return;
+  const a=added.find(x=>x.id===id);
+  if(a){added=added.filter(x=>x.id!==id);saveAdded();}
+  else{removed.push(id);saveRemoved();}
+  buildChips();view();
 });
+function editObs(id){
+  const rec=ALL().find(x=>x.id===id); if(!rec)return;
+  const t=prompt("Observação de "+rec.client+" (ex: já tem videomaker, chamar no WhatsApp):", rec.obs||"");
+  if(t===null)return;
+  overrides[id]=Object.assign({},overrides[id]||{},{obs:t.trim()});
+  localStorage.setItem("giscrm_over",JSON.stringify(overrides));
+  buildChips();view();
+  const row=document.querySelector('#rlist .rstop[data-id="'+(window.CSS&&CSS.escape?CSS.escape(id):id)+'"]');
+  if(row){
+    let ex=row.querySelector(".obstxt"); const txt=t.trim()?("📝 "+t.trim()):"";
+    if(ex){if(txt)ex.textContent=txt;else ex.remove();}
+    else if(txt){const sm=document.createElement("small");sm.className="obstxt";sm.textContent=txt;row.querySelector("span").appendChild(sm);}
+  }
+}
 document.getElementById("csvBtn").addEventListener("click",()=>{
   const q=s=>'"'+(""+(s||"")).replace(/"/g,'""')+'"';
-  const head=["Nome","Instagram","WhatsApp","Cidade","Endereco","Bairro","Nicho","Responsavel","Status","Ultimo_contato","Retorno","Valor"];
+  const head=["Nome","Instagram","WhatsApp","Cidade","Endereco","Bairro","Nicho","Observacao","Responsavel","Status","Ultimo_contato","Retorno","Valor"];
   const lines=[head.join(",")];
-  ALL().forEach(r=>lines.push([r.client,r.ig,r.wa_disp,r.city,r.endereco,r.bairro,r.niche,r.resp,r.status,r.date_last,r.date_return,r.value].map(q).join(",")));
+  ALL().forEach(r=>lines.push([r.client,r.ig,r.wa_disp,r.city,r.endereco,r.bairro,r.niche,r.obs,r.resp,r.status,r.date_last,r.date_return,r.value].map(q).join(",")));
   const blob=new Blob(["﻿"+lines.join("\n")],{type:"text/csv;charset=utf-8"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="CT-GISLAINE-export.csv";a.click();
 });
@@ -434,7 +479,7 @@ document.getElementById("tb").addEventListener("change",e=>{
   tr.classList.toggle("done",e.target.checked);
 });
 document.addEventListener("click",e=>{
-  const c=e.target.closest(".chip"); if(!c)return;
+  const c=e.target.closest(".chip"); if(!c||!c.dataset.t)return;
   if(c.dataset.t==="resp")fResp=c.dataset.v; else fStat=c.dataset.v;
   syncChips(); view();
 });
@@ -516,7 +561,7 @@ document.getElementById("retBtn").addEventListener("click",()=>{
   alert(`${ids.length} contato(s) agendados pra retornar em ${days} dias (dia ${ret}). ✅ Ordene por "retorno mais próximo" pra ver quem vence.`);
 });
 document.getElementById("saveState").addEventListener("click",()=>{
-  const st={done,overrides,added,savedAt:new Date().toISOString()};
+  const st={done,overrides,added,removed,lastRoute,savedAt:new Date().toISOString()};
   const blob=new Blob([JSON.stringify(st)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="CT-GISLAINE-progresso.json";a.click();
   const m=document.getElementById("stateMsg");m.textContent="✓ progresso salvo no arquivo";setTimeout(()=>m.textContent="",3500);
@@ -531,6 +576,8 @@ document.getElementById("loadState").addEventListener("change",e=>{
       if(st.done){done=st.done;localStorage.setItem("giscrm",JSON.stringify(done));}
       if(st.overrides){overrides=st.overrides;localStorage.setItem("giscrm_over",JSON.stringify(overrides));}
       if(st.added){added=st.added;localStorage.setItem("giscrm_added",JSON.stringify(added));}
+      if(st.removed){removed=st.removed;localStorage.setItem("giscrm_removed",JSON.stringify(removed));}
+      if(st.lastRoute){lastRoute=st.lastRoute;localStorage.setItem("giscrm_lastroute",JSON.stringify(lastRoute));}
       buildChips();view();updateFire();
       const m=document.getElementById("stateMsg");m.textContent="✓ progresso carregado";setTimeout(()=>m.textContent="",3500);
     }catch(err){alert("Arquivo de progresso inválido. Escolha o CT-GISLAINE-progresso.json que você salvou.");}
@@ -560,7 +607,7 @@ function fillRotaSel(){
   document.getElementById("r_area").innerHTML=o;
 }
 function centroid(list){let la=0,lo=0;list.forEach(r=>{la+=r.lat;lo+=r.lon});return{lat:la/list.length,lon:lo/list.length};}
-function montarRota(){
+function montarRota(registrar){
   const N=Math.max(1,Math.min(20,parseInt(document.getElementById("r_n").value,10)||10));
   const cands=rotaCands(), out=document.getElementById("r_out");
   if(!cands.length){rotaAtual=[];out.innerHTML='<div class="hint" style="margin-top:10px">Nenhum contato com endereço nesse filtro. Adiciona contatos com endereço primeiro.</div>';return;}
@@ -576,9 +623,9 @@ function montarRota(){
   sem.forEach(r=>{if(ordered.length<N){r._d=null;ordered.push(r);}});
   rotaAtual=ordered;
   let tot=0;ordered.forEach(r=>{if(r._d)tot+=r._d});
-  out.innerHTML='<div id="rlist" style="margin-top:12px">'+ordered.map((r,i)=>`<div class="rstop${done[r.id]?' rdone':''}" data-id="${esc(r.id)}"><input type="checkbox" class="rcbx" ${done[r.id]?'checked':''} title="Marcar que já passei aqui"><b class="n">${i+1}.</b><span><b>${esc(r.client)}</b><small>${esc([r.endereco,r.bairro,r.city].filter(Boolean).join(" · "))}${hasCoord(r)?'':' · sem 📍 (vai pelo endereço)'}</small></span>${r._d!=null?`<span class="rkm">${r._d<1?Math.round(r._d*1000)+" m":r._d.toFixed(1)+" km"}</span>`:''}</div>`).join('')+'</div>'
+  out.innerHTML='<div id="rlist" style="margin-top:12px">'+ordered.map((r,i)=>`<div class="rstop${done[r.id]?' rdone':''}" data-id="${esc(r.id)}"><input type="checkbox" class="rcbx" ${done[r.id]?'checked':''} title="Marcar que já passei aqui"><b class="n">${i+1}.</b><span><b>${esc(r.client)}</b><small>${esc([r.endereco,r.bairro,r.city].filter(Boolean).join(" · "))}${hasCoord(r)?'':' · sem 📍 (vai pelo endereço)'}</small>${r.obs?`<small class="obstxt">📝 ${esc(r.obs)}</small>`:''}</span>${r._d!=null?`<span class="rkm">${r._d<1?Math.round(r._d*1000)+" m":r._d.toFixed(1)+" km"}</span>`:''}<span class="robs" data-obs="${esc(r.id)}" title="Anotar observação">📝</span></div>`).join('')+'</div>'
     +`<div class="formbtns"><button id="r_routerra" class="pri">🚀 Montar no Routerra</button><button id="r_maps">🧭 Abrir no Google Maps</button><button id="r_csv">⬇️ Planilha (backup)</button><button id="r_ret">📅 Agendar retorno dos visitados</button><span class="hint">${ordered.length} parada(s)${tot?` · ~${tot.toFixed(1)} km em linha reta`:''}</span></div>`
-    +'<div class="hint" style="margin-top:8px"><b>🚀 Montar no Routerra</b> já copia os endereços na ordem certa: no Routerra, toca em <b>➕ (nova rota) → colar</b> — ele reconhece a lista e otimiza sozinho. <b>🧭 Google Maps</b> abre a rota pronta sem app nenhum. <b>⬇️ Planilha</b> é backup (o Routerra também importa arquivo). Conforme passa em cada lugar, marca a <b>caixinha ✓</b>; no fim do dia, <b>📅 Agendar retorno</b>.</div>';
+    +'<div class="hint" style="margin-top:8px"><b>🚀 Montar no Routerra</b> já copia os endereços na ordem certa: no Routerra, toca em <b>➕ (nova rota) → colar</b> — ele reconhece a lista e otimiza sozinho. <b>🧭 Google Maps</b> abre a rota pronta sem app nenhum. <b>⬇️ Planilha</b> é backup (o Routerra também importa arquivo). Conforme passa em cada lugar, marca a <b>caixinha ✓</b> e anota no <b>📝</b> o que rolou (ex: já tem videomaker, chamar no WhatsApp). Pra achar os contatos dessa rota depois, no meio de todo mundo, usa o chip <b>🗺️ Última rota</b> lá em cima. No fim do dia, <b>📅 Agendar retorno</b>.</div>';
   document.getElementById("r_routerra").addEventListener("click",montarRouterra);
   document.getElementById("r_csv").addEventListener("click",enviarCsvCircuit);
   document.getElementById("r_maps").addEventListener("click",()=>window.open(mapsUrl(),"_blank"));
@@ -591,6 +638,17 @@ function montarRota(){
     row.classList.toggle("rdone",e.target.checked);
     buildChips(); view();
   });
+  document.getElementById("rlist").addEventListener("click",e=>{
+    const ob=e.target.closest("[data-obs]"); if(ob)editObs(ob.dataset.obs);
+  });
+  if(registrar){
+    lastRoute={ts:Date.now(),ids:ordered.map(r=>r.id)};
+    localStorage.setItem("giscrm_lastroute",JSON.stringify(lastRoute));
+    hist.push({label:"montou rota de "+ordered.length+" parada(s)",ts:Date.now(),st:readLS()});
+    if(hist.length>40)hist=hist.slice(-40);
+    _snapBusy=true; saveHist(); _snapBusy=false; updateUndo();
+    buildChips();
+  }
 }
 function agendarRetornoRota(){
   const visit=(rotaAtual||[]).filter(r=>done[r.id]);
@@ -608,7 +666,7 @@ function agendarRetornoRota(){
 function csvCircuitText(){
   const q=s=>'"'+(""+(s||"")).replace(/"/g,'""')+'"';
   const lines=[["Address line 1","Address line 2","City","State","Zip","Country","Notes"].join(",")];
-  rotaAtual.forEach(r=>lines.push([r.endereco,r.bairro,r.city,"SC",r.cep,"Brazil",r.client+(r.wa_disp?" · "+r.wa_disp:"")].map(q).join(",")));
+  rotaAtual.forEach(r=>lines.push([r.endereco,r.bairro,r.city,"SC",r.cep,"Brazil",r.client+(r.obs?" · "+r.obs:"")+(r.wa_disp?" · "+r.wa_disp:"")].map(q).join(",")));
   return "\ufeff"+lines.join("\n");
 }
 function baixarCsvCircuit(){
@@ -624,7 +682,7 @@ function enviarCsvCircuit(){
   if(m){m.textContent="📄 Baixou! É só backup — dá pra importar o arquivo no Routerra, mas o 🚀 (colar) resolve mais rápido."; setTimeout(()=>m.textContent="",10000);}
 }
 function textoParadas(){
-  return rotaAtual.map(r=>[r.endereco,r.bairro,r.city,"SC"].filter(Boolean).join(", ")).join("\n");
+  return rotaAtual.map(r=>[r.client+" - "+r.endereco,r.bairro,r.city,"SC"].filter(Boolean).join(", ")).join("\n");
 }
 async function montarRouterra(){
   if(!rotaAtual.length)return;
@@ -691,7 +749,7 @@ document.getElementById("rotaBtn").addEventListener("click",()=>{
   if(!p.hidden){fillRotaSel();document.getElementById("r_out").innerHTML="";window.scrollTo({top:0,behavior:"smooth"});}
 });
 document.getElementById("r_close").addEventListener("click",()=>{document.getElementById("rotaPanel").hidden=true;});
-document.getElementById("r_build").addEventListener("click",montarRota);
+document.getElementById("r_build").addEventListener("click",()=>montarRota(true));
 document.getElementById("r_loc").addEventListener("click",localizarPendentes);
 document.getElementById("r_gps").addEventListener("click",()=>{
   const b=document.getElementById("r_gps");
@@ -706,21 +764,25 @@ document.getElementById("r_gps").addEventListener("click",()=>{
 // ===== histórico de segurança (desfazer) =====
 let hist=[]; try{hist=JSON.parse(localStorage.getItem("giscrm_hist")||"[]")}catch(e){hist=[]}
 let _snapBusy=false, _histPending=false, _histBefore=null;
-const _KEYS=["giscrm","giscrm_over","giscrm_added"];
+const _KEYS=["giscrm","giscrm_over","giscrm_added","giscrm_removed"];
 const _setLS=localStorage.setItem.bind(localStorage);
-function readLS(){let d={},o={},a=[];try{d=JSON.parse(localStorage.getItem("giscrm")||"{}")}catch(e){}try{o=JSON.parse(localStorage.getItem("giscrm_over")||"{}")}catch(e){}try{a=JSON.parse(localStorage.getItem("giscrm_added")||"[]")}catch(e){}return{done:d,overrides:o,added:a};}
+function readLS(){let d={},o={},a=[],rm=[];try{d=JSON.parse(localStorage.getItem("giscrm")||"{}")}catch(e){}try{o=JSON.parse(localStorage.getItem("giscrm_over")||"{}")}catch(e){}try{a=JSON.parse(localStorage.getItem("giscrm_added")||"[]")}catch(e){}try{rm=JSON.parse(localStorage.getItem("giscrm_removed")||"[]")}catch(e){}return{done:d,overrides:o,added:a,removed:rm};}
 function saveHist(){try{_setLS("giscrm_hist",JSON.stringify(hist));}catch(e){hist=hist.slice(-12);try{_setLS("giscrm_hist",JSON.stringify(hist));}catch(e2){}}}
 function diffLabel(o,n){
   const oa=(o.added||[]).length, na=(n.added||[]).length;
   if(na>oa)return "adicionou "+((n.added[na-1]||{}).client||"um contato");
   if(na<oa)return "excluiu um contato";
+  const orm=(o.removed||[]), nrm=(n.removed||[]);
+  if(nrm.length>orm.length){const idx=nrm.find(x=>orm.indexOf(x)<0);const rr=DATA.concat(added).find(x=>x.id===idx);return "excluiu "+(rr?rr.client:"um contato");}
+  if(nrm.length<orm.length)return "restaurou um contato";
   const od=Object.keys(o.done||{}).length, nd=Object.keys(n.done||{}).length;
   if(nd>od)return "marcou "+(nd-od)+" como contatado";
   if(nd<od)return "desmarcou contatado";
-  const oo=o.overrides||{}, no=n.overrides||{}; let ret=0,al=0;
-  for(const k in no){const a=oo[k]||{},b=no[k]||{}; if(b.date_return&&b.date_return!==a.date_return)ret++; if(b.alerta&&b.alerta!==a.alerta)al++;}
+  const oo=o.overrides||{}, no=n.overrides||{}; let ret=0,al=0,obx=0;
+  for(const k in no){const a=oo[k]||{},b=no[k]||{}; if(b.date_return&&b.date_return!==a.date_return)ret++; if(b.alerta&&b.alerta!==a.alerta)al++; if(b.obs!==undefined&&b.obs!==a.obs)obx++;}
   if(ret>0)return "agendou retorno de "+ret;
   if(al>0)return "marcou um alerta";
+  if(obx>0)return "anotou observação";
   return "mudança nos contatos";
 }
 localStorage.setItem=function(k,v){
@@ -740,9 +802,11 @@ function restoreState(st){
   done=st.done?JSON.parse(JSON.stringify(st.done)):{};
   overrides=st.overrides?JSON.parse(JSON.stringify(st.overrides)):{};
   added=st.added?JSON.parse(JSON.stringify(st.added)):[];
+  removed=st.removed?JSON.parse(JSON.stringify(st.removed)):[];
   _setLS("giscrm",JSON.stringify(done));
   _setLS("giscrm_over",JSON.stringify(overrides));
   _setLS("giscrm_added",JSON.stringify(added));
+  _setLS("giscrm_removed",JSON.stringify(removed));
   _snapBusy=false;
   buildChips(); view(); fillNicheList();
   const rp=document.getElementById("rotaPanel");
