@@ -577,10 +577,10 @@ function montarRota(){
   rotaAtual=ordered;
   let tot=0;ordered.forEach(r=>{if(r._d)tot+=r._d});
   out.innerHTML='<div id="rlist" style="margin-top:12px">'+ordered.map((r,i)=>`<div class="rstop${done[r.id]?' rdone':''}" data-id="${esc(r.id)}"><input type="checkbox" class="rcbx" ${done[r.id]?'checked':''} title="Marcar que já passei aqui"><b class="n">${i+1}.</b><span><b>${esc(r.client)}</b><small>${esc([r.endereco,r.bairro,r.city].filter(Boolean).join(" · "))}${hasCoord(r)?'':' · sem 📍 (o Circuit acha pelo endereço)'}</small></span>${r._d!=null?`<span class="rkm">${r._d<1?Math.round(r._d*1000)+" m":r._d.toFixed(1)+" km"}</span>`:''}</div>`).join('')+'</div>'
-    +`<div class="formbtns"><button id="r_copy" class="pri">📋 Copiar pro Spoke (Circuit)</button><button id="r_maps">🧭 Abrir no Google Maps</button>${IS_IOS?'':'<button id="r_csv">⬇️ Planilha (Android/PC)</button>'}<button id="r_ret">📅 Agendar retorno dos visitados</button><span class="hint">${ordered.length} parada(s)${tot?` · ~${tot.toFixed(1)} km em linha reta`:''}</span></div>`
-    +'<div class="hint" style="margin-top:8px"><b>📋 Copiar</b> monta a lista na ordem certa. Depois abre o <b>Spoke</b> (é o nome novo do Circuit), toca em <b>➕ adicionar parada</b> e <b>cola</b> — ele pega todas de uma vez. <i>No iPhone o Spoke não lê planilha, é colando mesmo.</i> Conforme passa em cada lugar, marca a <b>caixinha ✓</b>; no fim do dia, <b>📅 Agendar retorno</b>.</div>';
+    +`<div class="formbtns"><button id="r_csv" class="pri">📄 Planilha pro Spoke (Circuit)</button><button id="r_maps">🧭 Abrir no Google Maps</button><button id="r_copy">📋 Copiar endereços</button><button id="r_ret">📅 Agendar retorno dos visitados</button><span class="hint">${ordered.length} parada(s)${tot?` · ~${tot.toFixed(1)} km em linha reta`:''}</span></div>`
+    +'<div class="hint" style="margin-top:8px"><b>📄 Planilha</b> abre o compartilhar com o arquivo (escolhe o <b>Spoke</b> — é o nome novo do Circuit — ou salva em Arquivos). Dentro do Spoke: <b>nova rota → menu ⠇ → Importar planilha</b> e escolhe o arquivo. Se a planilha não rolar nesse aparelho, o <b>📋 Copiar</b> resolve: no Spoke, <b>➕ adicionar parada</b> e <b>colar</b>. Conforme passa em cada lugar, marca a <b>caixinha ✓</b>; no fim do dia, <b>📅 Agendar retorno</b>.</div>';
   document.getElementById("r_copy").addEventListener("click",copiarSpoke);
-  const csvB=document.getElementById("r_csv"); if(csvB)csvB.addEventListener("click",baixarCsvCircuit);
+  document.getElementById("r_csv").addEventListener("click",enviarCsvCircuit);
   document.getElementById("r_maps").addEventListener("click",()=>window.open(mapsUrl(),"_blank"));
   document.getElementById("r_ret").addEventListener("click",agendarRetornoRota);
   document.getElementById("rlist").addEventListener("change",e=>{
@@ -616,6 +616,21 @@ function baixarCsvCircuit(){
   const f=new Date(),dd=String(f.getDate()).padStart(2,"0")+"."+String(f.getMonth()+1).padStart(2,"0");
   const blob=new Blob([csvCircuitText()],{type:"text/csv;charset=utf-8"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="rota-circuit-"+dd+".csv";a.click();
+}
+async function enviarCsvCircuit(){
+  if(!rotaAtual.length)return;
+  const f=new Date(),dd=String(f.getDate()).padStart(2,"0")+"."+String(f.getMonth()+1).padStart(2,"0");
+  let entregue=false;
+  try{
+    const file=new File([csvCircuitText()],"rota-spoke-"+dd+".csv",{type:"text/csv"});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],title:"Rota do dia"});entregue=true;}
+      catch(e){if(e&&e.name==="AbortError")entregue=true;}
+    }
+  }catch(e){}
+  if(!entregue)baixarCsvCircuit();
+  const m=document.getElementById("r_msg");
+  if(m){m.textContent="📄 No Spoke: nova rota → menu ⠇ → Importar planilha → escolhe o arquivo"; setTimeout(()=>m.textContent="",9000);}
 }
 function textoParadas(){
   return rotaAtual.map(r=>[r.endereco,r.bairro,r.city,"SC"].filter(Boolean).join(", ")).join("\n");
