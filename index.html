@@ -110,7 +110,7 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
 @media print{.bar,#addPanel,#rotaPanel,#setPanel{display:none}body{background:#fff;color:#000}a{color:#000}th{top:0}}
 </style></head><body><div class="wrap">
 <h1>GF <b>MÔVE</b> — CT <b>Gislaine</b></h1>
-<div class="sub">CT da Gislaine (Floripa e São José). Adiciona o contato com endereço e nicho, marca quem já foi, e a <b>🗺️ Rota do dia</b> monta a lista dos mais próximos pra mandar pro Circuit.</div>
+<div class="sub">CT da Gislaine (Floripa e São José). Adiciona o contato com endereço e nicho, marca quem já foi, e a <b>🗺️ Rota do dia</b> monta a lista dos mais próximos pra jogar no Routerra.</div>
 <div class="bar">
   <div class="row1">
     <input type="search" id="q" placeholder="Buscar nome, @, cidade, nicho...">
@@ -174,7 +174,7 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
   <div class="formgrid">
     <label><span>Nicho</span><select id="r_niche"></select></label>
     <label><span>Região (cidade ou bairro)</span><select id="r_area"></select></label>
-    <label><span>Paradas (Circuit grátis aceita 10)</span><input id="r_n" type="number" min="1" max="10" value="10"></label>
+    <label><span>Paradas (Routerra grátis aceita 20)</span><input id="r_n" type="number" min="1" max="20" value="10"></label>
   </div>
   <div class="formbtns">
     <button id="r_build" class="pri">Montar rota</button>
@@ -395,7 +395,7 @@ document.getElementById("saveContact").addEventListener("click",()=>{
     geoAddr(rec.endereco,rec.bairro,rec.city).then(g=>{
       const m=document.getElementById("addMsg");
       if(g){setCoord(rec.id,g);m.textContent="✓ "+rec.client+" · 📍 endereço localizado";}
-      else{m.textContent="✓ "+rec.client+" · sem 📍 por enquanto (o Circuit acha pelo endereço)";}
+      else{m.textContent="✓ "+rec.client+" · sem 📍 por enquanto (a rota vai pelo endereço)";}
       setTimeout(()=>m.textContent="",4000);view();
     });
   }
@@ -537,7 +537,7 @@ document.getElementById("loadState").addEventListener("change",e=>{
   };
   rd.readAsText(f);
 });
-// ---- rota do dia / Circuit ----
+// ---- rota do dia / Routerra ----
 function hasCoord(r){return typeof r.lat==="number"&&typeof r.lon==="number";}
 function hav(a,b){const d=x=>x*Math.PI/180;const h=Math.sin(d(b.lat-a.lat)/2)**2+Math.cos(d(a.lat))*Math.cos(d(b.lat))*Math.sin(d(b.lon-a.lon)/2)**2;return 12742*Math.asin(Math.sqrt(h));}
 const IS_IOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -561,7 +561,7 @@ function fillRotaSel(){
 }
 function centroid(list){let la=0,lo=0;list.forEach(r=>{la+=r.lat;lo+=r.lon});return{lat:la/list.length,lon:lo/list.length};}
 function montarRota(){
-  const N=Math.max(1,Math.min(10,parseInt(document.getElementById("r_n").value,10)||10));
+  const N=Math.max(1,Math.min(20,parseInt(document.getElementById("r_n").value,10)||10));
   const cands=rotaCands(), out=document.getElementById("r_out");
   if(!cands.length){rotaAtual=[];out.innerHTML='<div class="hint" style="margin-top:10px">Nenhum contato com endereço nesse filtro. Adiciona contatos com endereço primeiro.</div>';return;}
   const com=cands.filter(hasCoord), sem=cands.filter(r=>!hasCoord(r));
@@ -576,10 +576,10 @@ function montarRota(){
   sem.forEach(r=>{if(ordered.length<N){r._d=null;ordered.push(r);}});
   rotaAtual=ordered;
   let tot=0;ordered.forEach(r=>{if(r._d)tot+=r._d});
-  out.innerHTML='<div id="rlist" style="margin-top:12px">'+ordered.map((r,i)=>`<div class="rstop${done[r.id]?' rdone':''}" data-id="${esc(r.id)}"><input type="checkbox" class="rcbx" ${done[r.id]?'checked':''} title="Marcar que já passei aqui"><b class="n">${i+1}.</b><span><b>${esc(r.client)}</b><small>${esc([r.endereco,r.bairro,r.city].filter(Boolean).join(" · "))}${hasCoord(r)?'':' · sem 📍 (o Circuit acha pelo endereço)'}</small></span>${r._d!=null?`<span class="rkm">${r._d<1?Math.round(r._d*1000)+" m":r._d.toFixed(1)+" km"}</span>`:''}</div>`).join('')+'</div>'
-    +`<div class="formbtns"><button id="r_csv" class="pri">📄 Planilha pro Spoke (Circuit)</button><button id="r_maps">🧭 Abrir no Google Maps</button><button id="r_copy">📋 Copiar endereços</button><button id="r_ret">📅 Agendar retorno dos visitados</button><span class="hint">${ordered.length} parada(s)${tot?` · ~${tot.toFixed(1)} km em linha reta`:''}</span></div>`
-    +'<div class="hint" style="margin-top:8px"><b>📄 Planilha</b> baixa o arquivo da rota. Aí abre o arquivo baixado (Downloads/Arquivos) → <b>Compartilhar → Spoke</b> (é o nome novo do Circuit) — ou, dentro do Spoke: <b>nova rota → menu ⠇ → Importar planilha</b>. Se a planilha não rolar nesse aparelho, o <b>📋 Copiar</b> resolve: no Spoke, <b>➕ adicionar parada</b> e <b>colar</b>. Conforme passa em cada lugar, marca a <b>caixinha ✓</b>; no fim do dia, <b>📅 Agendar retorno</b>.</div>';
-  document.getElementById("r_copy").addEventListener("click",copiarSpoke);
+  out.innerHTML='<div id="rlist" style="margin-top:12px">'+ordered.map((r,i)=>`<div class="rstop${done[r.id]?' rdone':''}" data-id="${esc(r.id)}"><input type="checkbox" class="rcbx" ${done[r.id]?'checked':''} title="Marcar que já passei aqui"><b class="n">${i+1}.</b><span><b>${esc(r.client)}</b><small>${esc([r.endereco,r.bairro,r.city].filter(Boolean).join(" · "))}${hasCoord(r)?'':' · sem 📍 (vai pelo endereço)'}</small></span>${r._d!=null?`<span class="rkm">${r._d<1?Math.round(r._d*1000)+" m":r._d.toFixed(1)+" km"}</span>`:''}</div>`).join('')+'</div>'
+    +`<div class="formbtns"><button id="r_routerra" class="pri">🚀 Montar no Routerra</button><button id="r_maps">🧭 Abrir no Google Maps</button><button id="r_csv">⬇️ Planilha (backup)</button><button id="r_ret">📅 Agendar retorno dos visitados</button><span class="hint">${ordered.length} parada(s)${tot?` · ~${tot.toFixed(1)} km em linha reta`:''}</span></div>`
+    +'<div class="hint" style="margin-top:8px"><b>🚀 Montar no Routerra</b> já copia os endereços na ordem certa: no Routerra, toca em <b>➕ (nova rota) → colar</b> — ele reconhece a lista e otimiza sozinho. <b>🧭 Google Maps</b> abre a rota pronta sem app nenhum. <b>⬇️ Planilha</b> é backup (o Routerra também importa arquivo). Conforme passa em cada lugar, marca a <b>caixinha ✓</b>; no fim do dia, <b>📅 Agendar retorno</b>.</div>';
+  document.getElementById("r_routerra").addEventListener("click",montarRouterra);
   document.getElementById("r_csv").addEventListener("click",enviarCsvCircuit);
   document.getElementById("r_maps").addEventListener("click",()=>window.open(mapsUrl(),"_blank"));
   document.getElementById("r_ret").addEventListener("click",agendarRetornoRota);
@@ -615,18 +615,18 @@ function baixarCsvCircuit(){
   if(!rotaAtual.length)return;
   const f=new Date(),dd=String(f.getDate()).padStart(2,"0")+"."+String(f.getMonth()+1).padStart(2,"0");
   const blob=new Blob([csvCircuitText()],{type:"text/csv;charset=utf-8"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="rota-circuit-"+dd+".csv";a.click();
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="rota-gislaine-"+dd+".csv";a.click();
 }
 function enviarCsvCircuit(){
   if(!rotaAtual.length)return;
   baixarCsvCircuit();
   const m=document.getElementById("r_msg");
-  if(m){m.textContent="📄 Baixou! Abre o arquivo baixado (Downloads/Arquivos) → Compartilhar → Spoke. Ou no Spoke: nova rota → menu ⠇ → Importar planilha."; setTimeout(()=>m.textContent="",12000);}
+  if(m){m.textContent="📄 Baixou! É só backup — dá pra importar o arquivo no Routerra, mas o 🚀 (colar) resolve mais rápido."; setTimeout(()=>m.textContent="",10000);}
 }
 function textoParadas(){
   return rotaAtual.map(r=>[r.endereco,r.bairro,r.city,"SC"].filter(Boolean).join(", ")).join("\n");
 }
-async function copiarSpoke(){
+async function montarRouterra(){
   if(!rotaAtual.length)return;
   const t=textoParadas(); let ok=false;
   try{await navigator.clipboard.writeText(t); ok=true;}
@@ -638,10 +638,10 @@ async function copiarSpoke(){
       ok=document.execCommand("copy"); document.body.removeChild(ta);
     }catch(e2){}
   }
-  const b=document.getElementById("r_copy"), m=document.getElementById("r_msg");
+  const b=document.getElementById("r_routerra"), m=document.getElementById("r_msg");
   if(ok){
-    if(b){b.textContent="✓ Copiado! Abre o Spoke, ➕ e cola"; setTimeout(()=>{b.textContent="📋 Copiar pro Spoke (Circuit)";},6000);}
-    if(m){m.textContent="✓ "+rotaAtual.length+" endereço(s) na área de transferência"; setTimeout(()=>m.textContent="",6000);}
+    if(b){b.textContent="✓ Copiado! No Routerra: ➕ e colar"; setTimeout(()=>{b.textContent="🚀 Montar no Routerra";},7000);}
+    if(m){m.textContent="✓ "+rotaAtual.length+" endereço(s) copiados — no Routerra: ➕ nova rota → colar → otimizar"; setTimeout(()=>m.textContent="",9000);}
   }else{
     prompt("Não consegui copiar sozinho. Segura no texto e copia daqui:", t);
   }
