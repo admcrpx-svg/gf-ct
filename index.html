@@ -47,6 +47,9 @@ button.pri{background:linear-gradient(90deg,var(--sun1),var(--sun2));color:#111;
 tr.inativa td{opacity:.45}
 tr.inativa td.delcell{opacity:1}
 .inatag{display:inline-block;font-size:10.5px;padding:1px 8px;border-radius:20px;background:#2a2233;color:#c9a6ff;border:1px solid #4a3a5a;margin-left:6px;cursor:pointer;white-space:nowrap}
+.restore{color:var(--sun2);cursor:pointer;font-size:12.5px;white-space:nowrap;border:1px solid var(--line);border-radius:7px;padding:3px 9px}
+.restore:hover{border-color:var(--sun1)}
+#rotaChip.on,#inativoChip.on,#lixoChip.on{color:#111;background:linear-gradient(90deg,var(--sun1),var(--sun2));border-color:transparent;font-weight:600}
 td.delcell{text-align:right;width:34px}
 .obs{color:#ffd479;font-size:11.5px;margin-top:2px;cursor:pointer;font-weight:400}
 .obsadd{color:var(--mut);opacity:.45;cursor:pointer;font-size:12px;margin-left:6px}
@@ -162,6 +165,7 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
     <div class="chips" id="statChips"></div>
     <span class="chip" id="rotaChip" hidden>🗺️ Última rota</span>
     <span class="chip" id="inativoChip" hidden>⏸️ Inativos</span>
+    <span class="chip" id="lixoChip" hidden>🗑️ Lixeira</span>
     <span class="count" id="count"></span>
   </div>
 </div>
@@ -279,7 +283,8 @@ let overrides={}; try{overrides=JSON.parse(localStorage.getItem("giscrm_over")||
 let removed=[]; try{removed=JSON.parse(localStorage.getItem("giscrm_removed")||"[]")}catch(e){removed=[]}
 function saveRemoved(){localStorage.setItem("giscrm_removed",JSON.stringify(removed));}
 let lastRoute=null; try{lastRoute=JSON.parse(localStorage.getItem("giscrm_lastroute")||"null")}catch(e){lastRoute=null}
-let fResp="Todos", fStat="Todos", fHide=false, fAlerta=false, fRota=false, fInativo=false, sortK="ret", q="";
+let fResp="Todos", fStat="Todos", fHide=false, fAlerta=false, fRota=false, fInativo=false, fLixeira=false, sortK="ret", q="";
+function LIXO(){return DATA.concat(added).filter(r=>removed.indexOf(r.id)>=0).map(r=>{const o=overrides[r.id];return o?Object.assign({},r,o):r;});}
 const statOrder={Hot:0,Negotiating:1,Novo:2,Freeze:3,Cold:4,"—":5};
 const TODAY=new Date(); const todayKey=(TODAY.getMonth()+1)*31+TODAY.getDate();
 
@@ -327,10 +332,15 @@ function buildChips(){
   if(ic){const ni=ALL().filter(r=>r.inativo).length;
     if(ni){ic.hidden=false;ic.textContent="⏸️ Inativos ("+ni+")";ic.classList.toggle("on",fInativo);}
     else{ic.hidden=true;if(fInativo){fInativo=false;}}}
+  const lx=document.getElementById("lixoChip");
+  if(lx){const nl=removed.length;
+    if(nl){lx.hidden=false;lx.textContent="🗑️ Lixeira ("+nl+")";lx.classList.toggle("on",fLixeira);}
+    else{lx.hidden=true;if(fLixeira){fLixeira=false;}}}
   syncChips();
 }
 document.getElementById("rotaChip").addEventListener("click",()=>{fRota=!fRota;buildChips();view();});
-document.getElementById("inativoChip").addEventListener("click",()=>{fInativo=!fInativo;buildChips();view();});
+document.getElementById("inativoChip").addEventListener("click",()=>{fInativo=!fInativo;if(fInativo)fLixeira=false;buildChips();view();});
+document.getElementById("lixoChip").addEventListener("click",()=>{fLixeira=!fLixeira;if(fLixeira){fInativo=false;fRota=false;}buildChips();view();});
 function syncChips(){
   document.querySelectorAll('.chip').forEach(c=>{
     if(!c.dataset.t)return;
@@ -340,6 +350,10 @@ function syncChips(){
 }
 function esc(s){return (""+(s||"")).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function currentRows(){
+  if(fLixeira){
+    return LIXO().filter(r=>!q||[r.client,r.handle,r.city,r.niche,r.bairro,r.obs].join(" ").toLowerCase().includes(q))
+      .sort((a,b)=>a.client.localeCompare(b.client));
+  }
   let rows=ALL().filter(r=>{
     if(fResp!=="Todos"&&r.resp!==fResp)return false;
     if(fStat!=="Todos"&&r.status!==fStat)return false;
@@ -386,7 +400,7 @@ function view(){
       <td class="mut" data-label="Últ. contato">${esc(r.date_last)||'—'}</td>
       <td data-label="Retorno">${ret}</td>
       <td class="mut" data-label="Valor">${r.value&&r.value!=='R$0.00'&&r.value!=='R$0,00'?esc(r.value):'—'}</td>
-      <td class="delcell" data-label=""><span class="pause" data-inativo="${r.id}" title="${r.inativo?'Reativar':'Inativar — fica salvo mas não entra na rota'}">${r.inativo?'▶️':'⏸️'}</span><span class="trash" data-del="${r.id}" title="Excluir este contato">🗑️</span></td>
+      <td class="delcell" data-label="">${fLixeira?`<span class="restore" data-restore="${r.id}" title="Tirar da lixeira, volta pra lista">↩︎ restaurar</span>`:`<span class="pause" data-inativo="${r.id}" title="${r.inativo?'Reativar':'Inativar — fica salvo mas não entra na rota'}">${r.inativo?'▶️':'⏸️'}</span><span class="trash" data-del="${r.id}" title="Excluir este contato">🗑️</span>`}</td>
     </tr>`;
   }).join('');
   document.getElementById("count").textContent=`${rows.length} de ${ALL().length} contatos`;
@@ -420,8 +434,11 @@ document.getElementById("saveContact").addEventListener("click",()=>{
   const handle=normHandle(g("f_ig"));
   const wa=waFull(g("f_wa"));
   // aviso de duplicado
-  const dup=ALL().find(r=>(handle&&r.handle===handle)||(wa&&r.wa===wa));
-  if(dup){const av=dup.inativo?` — e está marcado como ⏸️ INATIVO (já avaliado: ${dup.obs||"sem motivo"})`:"";
+  const pool=DATA.concat(added).map(r=>{const o=overrides[r.id];return o?Object.assign({},r,o):r;});
+  const dup=pool.find(r=>(handle&&r.handle===handle)||(wa&&r.wa===wa));
+  if(dup){
+    const naLixeira=removed.indexOf(dup.id)>=0;
+    const av=naLixeira?` — e está na 🗑️ LIXEIRA (já foi avaliado e excluído)`:(dup.inativo?` — e está ⏸️ INATIVO (já avaliado: ${dup.obs||"sem motivo"})`:"");
     if(!confirm(`Já existe "${dup.client}" com esse @ ou telefone${av}. Adicionar mesmo assim?`))return;}
   let val=g("f_val"); if(!val)val="R$0,00";
   const rec=enrich({
@@ -450,6 +467,7 @@ document.getElementById("tb").addEventListener("click",e=>{
   const waL=e.target.closest("a.wa"); if(waL){ if(isMobile)return; e.preventDefault();openIn("gfwa",waL.href);return;}
   const igL=e.target.closest("a.ig"); if(igL){ if(isMobile)return; e.preventDefault();openIn("gfig",igL.href);return;}
   const fg=e.target.closest("[data-flag]"); if(fg){const id=fg.dataset.flag; if(confirm("Tirar o alerta deste contato?")){overrides[id]=Object.assign({},overrides[id]||{},{alerta:""});localStorage.setItem("giscrm_over",JSON.stringify(overrides));view();} return;}
+  const rs=e.target.closest("[data-restore]"); if(rs){const id=rs.dataset.restore;removed=removed.filter(x=>x!==id);saveRemoved();buildChips();view();const m=document.getElementById("stateMsg");if(m){m.textContent="↩︎ contato restaurado da lixeira";setTimeout(()=>m.textContent="",3000);}return;}
   const pz=e.target.closest("[data-inativo]"); if(pz){toggleInativo(pz.dataset.inativo);return;}
   const ob=e.target.closest("[data-obs]"); if(ob){editObs(ob.dataset.obs);return;}
   const d=e.target.closest("[data-del]"); if(!d)return;
@@ -623,13 +641,13 @@ const IS_APPCEL=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 let rStart=null, rotaAtual=[];
 function rotaCands(){
   const ni=document.getElementById("r_niche").value, ar=document.getElementById("r_area").value, skip=document.getElementById("r_skip").checked;
-  return ALL().filter(r=>r.endereco&&!r.inativo).filter(r=>!ni||r.niche===ni).filter(r=>{
+  return ALL().filter(r=>!r.inativo&&(r.endereco||r.bairro||r.city)).filter(r=>!ni||r.niche===ni).filter(r=>{
     if(!ar)return true; const i=ar.indexOf("::"), t=ar.slice(0,i), v=ar.slice(i+2);
     return t==="c"?(r.city===v):((r.bairro||"")===v);
   }).filter(r=>!(skip&&done[r.id]));
 }
 function fillRotaSel(){
-  const base=ALL().filter(r=>r.endereco);
+  const base=ALL().filter(r=>!r.inativo&&(r.endereco||r.bairro||r.city));
   const nc={};base.forEach(r=>{if(r.niche)nc[r.niche]=(nc[r.niche]||0)+1});
   document.getElementById("r_niche").innerHTML='<option value="">Todos os nichos</option>'+Object.keys(nc).sort().map(n=>`<option value="${esc(n)}">${esc(n)} (${nc[n]})</option>`).join('');
   const cc={},bc={};base.forEach(r=>{if(r.city)cc[r.city]=1;if(r.bairro&&!bc[r.bairro])bc[r.bairro]=r.city||""});
@@ -642,7 +660,7 @@ function centroid(list){let la=0,lo=0;list.forEach(r=>{la+=r.lat;lo+=r.lon});ret
 function montarRota(registrar){
   const N=Math.max(1,Math.min(20,parseInt(document.getElementById("r_n").value,10)||10));
   const cands=rotaCands(), out=document.getElementById("r_out");
-  if(!cands.length){rotaAtual=[];out.innerHTML='<div class="hint" style="margin-top:10px">Nenhum contato com endereço nesse filtro. Adiciona contatos com endereço primeiro.</div>';return;}
+  if(!cands.length){rotaAtual=[];out.innerHTML='<div class="hint" style="margin-top:10px">Nenhum contato nesse filtro (fora os inativos). Muda o nicho ou a região.</div>';return;}
   const com=cands.filter(hasCoord), sem=cands.filter(r=>!hasCoord(r));
   const ordered=[];
   if(com.length){
@@ -652,6 +670,7 @@ function montarRota(registrar){
       const nx=pool.shift(); nx._d=hav(cur,nx); ordered.push(nx); cur=nx;
     }
   }
+  sem.sort((a,b)=>(a.bairro||a.city||"").localeCompare(b.bairro||b.city||"")||a.client.localeCompare(b.client));
   sem.forEach(r=>{if(ordered.length<N){r._d=null;ordered.push(r);}});
   rotaAtual=ordered;
   let tot=0;ordered.forEach(r=>{if(r._d)tot+=r._d});
@@ -698,7 +717,7 @@ function agendarRetornoRota(){
 function csvCircuitText(){
   const q=s=>'"'+(""+(s||"")).replace(/"/g,'""')+'"';
   const lines=[["Address line 1","Address line 2","City","State","Zip","Country","Notes"].join(",")];
-  rotaAtual.forEach(r=>lines.push([r.endereco,r.bairro,r.city,"SC",r.cep,"Brazil",r.client+(r.obs?" · "+r.obs:"")+(r.wa_disp?" · "+r.wa_disp:"")].map(q).join(",")));
+  rotaAtual.forEach(r=>lines.push([r.endereco||r.bairro,r.endereco?r.bairro:"",r.city,"SC",r.cep,"Brazil",r.client+(r.obs?" · "+r.obs:"")+(r.wa_disp?" · "+r.wa_disp:"")].map(q).join(",")));
   return "\ufeff"+lines.join("\n");
 }
 function baixarCsvCircuit(){
@@ -714,7 +733,7 @@ function enviarCsvCircuit(){
   if(m){m.textContent="📄 Baixou! É só backup — dá pra importar o arquivo no Routerra, mas o 🚀 (colar) resolve mais rápido."; setTimeout(()=>m.textContent="",10000);}
 }
 function textoParadas(){
-  return rotaAtual.map(r=>[r.client+" - "+r.endereco,r.bairro,r.city,"SC"].filter(Boolean).join(", ")).join("\n");
+  return rotaAtual.map(r=>[r.client+(r.endereco?" - "+r.endereco:""),r.bairro,r.city,"SC"].filter(Boolean).join(", ")).join("\n");
 }
 async function montarRouterra(){
   if(!rotaAtual.length)return;
