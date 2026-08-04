@@ -42,6 +42,11 @@ button.pri{background:linear-gradient(90deg,var(--sun1),var(--sun2));color:#111;
 .rkm{margin-left:auto;color:var(--mut);font-size:12px;white-space:nowrap}
 .trash{color:#ff7b6b;cursor:pointer;font-size:15px;opacity:.7}
 .trash:hover{opacity:1}
+.pause{cursor:pointer;font-size:15px;opacity:.7;margin-right:10px}
+.pause:hover{opacity:1}
+tr.inativa td{opacity:.45}
+tr.inativa td.delcell{opacity:1}
+.inatag{display:inline-block;font-size:10.5px;padding:1px 8px;border-radius:20px;background:#2a2233;color:#c9a6ff;border:1px solid #4a3a5a;margin-left:6px;cursor:pointer;white-space:nowrap}
 td.delcell{text-align:right;width:34px}
 .obs{color:#ffd479;font-size:11.5px;margin-top:2px;cursor:pointer;font-weight:400}
 .obsadd{color:var(--mut);opacity:.45;cursor:pointer;font-size:12px;margin-left:6px}
@@ -156,6 +161,7 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
     <span class="mut" style="margin:0 4px">·</span>
     <div class="chips" id="statChips"></div>
     <span class="chip" id="rotaChip" hidden>🗺️ Última rota</span>
+    <span class="chip" id="inativoChip" hidden>⏸️ Inativos</span>
     <span class="count" id="count"></span>
   </div>
 </div>
@@ -273,7 +279,7 @@ let overrides={}; try{overrides=JSON.parse(localStorage.getItem("giscrm_over")||
 let removed=[]; try{removed=JSON.parse(localStorage.getItem("giscrm_removed")||"[]")}catch(e){removed=[]}
 function saveRemoved(){localStorage.setItem("giscrm_removed",JSON.stringify(removed));}
 let lastRoute=null; try{lastRoute=JSON.parse(localStorage.getItem("giscrm_lastroute")||"null")}catch(e){lastRoute=null}
-let fResp="Todos", fStat="Todos", fHide=false, fAlerta=false, fRota=false, sortK="ret", q="";
+let fResp="Todos", fStat="Todos", fHide=false, fAlerta=false, fRota=false, fInativo=false, sortK="ret", q="";
 const statOrder={Hot:0,Negotiating:1,Novo:2,Freeze:3,Cold:4,"—":5};
 const TODAY=new Date(); const todayKey=(TODAY.getMonth()+1)*31+TODAY.getDate();
 
@@ -317,9 +323,14 @@ function buildChips(){
       rc2.hidden=false; rc2.textContent="🗺️ Última rota ("+n+")"; rc2.classList.toggle("on",fRota);
     }else{rc2.hidden=true;}
   }
+  const ic=document.getElementById("inativoChip");
+  if(ic){const ni=ALL().filter(r=>r.inativo).length;
+    if(ni){ic.hidden=false;ic.textContent="⏸️ Inativos ("+ni+")";ic.classList.toggle("on",fInativo);}
+    else{ic.hidden=true;if(fInativo){fInativo=false;}}}
   syncChips();
 }
 document.getElementById("rotaChip").addEventListener("click",()=>{fRota=!fRota;buildChips();view();});
+document.getElementById("inativoChip").addEventListener("click",()=>{fInativo=!fInativo;buildChips();view();});
 function syncChips(){
   document.querySelectorAll('.chip').forEach(c=>{
     if(!c.dataset.t)return;
@@ -334,6 +345,7 @@ function currentRows(){
     if(fStat!=="Todos"&&r.status!==fStat)return false;
     if(fAlerta&&!r.alerta)return false;
     if(fHide&&done[r.id])return false;
+    if(fInativo&&!r.inativo)return false;
     if(fRota&&lastRoute&&lastRoute.ids&&lastRoute.ids.indexOf(r.id)<0)return false;
     if(q&&!r.s.includes(q))return false;
     return true;
@@ -361,11 +373,12 @@ function view(){
     const rsp=r.resp?`<span class="rsp ${r.resp}">${r.resp}</span>`:'<span class="mut">—</span>';
     const flag=r.alerta?`<span class="flag" data-flag="${r.id}" title="Clique pra tirar o alerta">⚑ ${esc(r.alerta)}</span>`:'';
     const psub=[r.person,r.niche,r.bairro].filter(Boolean).join(" · ");const person=psub?`<small class="mut">${esc(psub)}</small>`:'';
+    const inaT=r.inativo?`<span class="inatag" data-inativo="${esc(r.id)}" title="Reativar (voltar pras rotas)">⏸️ inativo</span>`:'';
     const obsH=r.obs?`<div class="obs" data-obs="${r.id}" title="Editar observação">📝 ${esc(r.obs)}</div>`:`<span class="obsadd" data-obs="${r.id}" title="Anotar observação">📝</span>`;
-    return `<tr class="${done[r.id]?'done':''}${sel.has(r.id)?' selrow':''}" data-id="${r.id}">
+    return `<tr class="${done[r.id]?'done':''}${r.inativo?' inativa':''}${sel.has(r.id)?' selrow':''}" data-id="${r.id}">
       <td data-label="🚀 Disparo"><input class="selbox" type="checkbox" ${sel.has(r.id)?'checked':''}></td>
       <td data-label="✓ Contatei"><input class="cbx" type="checkbox" ${done[r.id]?'checked':''}></td>
-      <td class="nm">${esc(r.client)}${flag}${person}${obsH}</td>
+      <td class="nm">${esc(r.client)}${inaT}${flag}${person}${obsH}</td>
       <td data-label="Instagram">${ig}</td><td data-label="WhatsApp">${wa}</td>
       <td class="mut" data-label="Cidade">${esc(r.city)||'—'}</td>
       <td data-label="Dono">${rsp}</td>
@@ -373,7 +386,7 @@ function view(){
       <td class="mut" data-label="Últ. contato">${esc(r.date_last)||'—'}</td>
       <td data-label="Retorno">${ret}</td>
       <td class="mut" data-label="Valor">${r.value&&r.value!=='R$0.00'&&r.value!=='R$0,00'?esc(r.value):'—'}</td>
-      <td class="delcell" data-label=""><span class="trash" data-del="${r.id}" title="Excluir este contato">🗑️</span></td>
+      <td class="delcell" data-label=""><span class="pause" data-inativo="${r.id}" title="${r.inativo?'Reativar':'Inativar — fica salvo mas não entra na rota'}">${r.inativo?'▶️':'⏸️'}</span><span class="trash" data-del="${r.id}" title="Excluir este contato">🗑️</span></td>
     </tr>`;
   }).join('');
   document.getElementById("count").textContent=`${rows.length} de ${ALL().length} contatos`;
@@ -408,7 +421,8 @@ document.getElementById("saveContact").addEventListener("click",()=>{
   const wa=waFull(g("f_wa"));
   // aviso de duplicado
   const dup=ALL().find(r=>(handle&&r.handle===handle)||(wa&&r.wa===wa));
-  if(dup&&!confirm(`Já existe "${dup.client}" com esse @ ou telefone. Adicionar mesmo assim?`))return;
+  if(dup){const av=dup.inativo?` — e está marcado como ⏸️ INATIVO (já avaliado: ${dup.obs||"sem motivo"})`:"";
+    if(!confirm(`Já existe "${dup.client}" com esse @ ou telefone${av}. Adicionar mesmo assim?`))return;}
   let val=g("f_val"); if(!val)val="R$0,00";
   const rec=enrich({
     client:nome, person:"", handle:handle, phone:wa.replace(/^55/,''), wa:wa,
@@ -436,6 +450,7 @@ document.getElementById("tb").addEventListener("click",e=>{
   const waL=e.target.closest("a.wa"); if(waL){ if(isMobile)return; e.preventDefault();openIn("gfwa",waL.href);return;}
   const igL=e.target.closest("a.ig"); if(igL){ if(isMobile)return; e.preventDefault();openIn("gfig",igL.href);return;}
   const fg=e.target.closest("[data-flag]"); if(fg){const id=fg.dataset.flag; if(confirm("Tirar o alerta deste contato?")){overrides[id]=Object.assign({},overrides[id]||{},{alerta:""});localStorage.setItem("giscrm_over",JSON.stringify(overrides));view();} return;}
+  const pz=e.target.closest("[data-inativo]"); if(pz){toggleInativo(pz.dataset.inativo);return;}
   const ob=e.target.closest("[data-obs]"); if(ob){editObs(ob.dataset.obs);return;}
   const d=e.target.closest("[data-del]"); if(!d)return;
   const id=d.dataset.del; const rec=ALL().find(x=>x.id===id); if(!rec)return;
@@ -445,6 +460,21 @@ document.getElementById("tb").addEventListener("click",e=>{
   else{removed.push(id);saveRemoved();}
   buildChips();view();
 });
+function toggleInativo(id){
+  const rec=ALL().find(x=>x.id===id); if(!rec)return;
+  if(rec.inativo){
+    overrides[id]=Object.assign({},overrides[id]||{},{inativo:false});
+    localStorage.setItem("giscrm_over",JSON.stringify(overrides));
+    buildChips();view();
+    const m=document.getElementById("stateMsg");if(m){m.textContent="▶️ "+rec.client+" reativado — volta pras rotas";setTimeout(()=>m.textContent="",3500);}
+  }else{
+    const t=prompt("Inativar \""+rec.client+"\".\nFica salvo na rede (não some), mas NÃO entra nas rotas nem volta em varredura nova.\nMotivo:", rec.obs||"já tem produtora");
+    if(t===null)return;
+    overrides[id]=Object.assign({},overrides[id]||{},{inativo:true,obs:t.trim()});
+    localStorage.setItem("giscrm_over",JSON.stringify(overrides));
+    buildChips();view();
+  }
+}
 function editObs(id){
   const rec=ALL().find(x=>x.id===id); if(!rec)return;
   const t=prompt("Observação de "+rec.client+" (ex: já tem videomaker, chamar no WhatsApp):", rec.obs||"");
@@ -593,7 +623,7 @@ const IS_APPCEL=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 let rStart=null, rotaAtual=[];
 function rotaCands(){
   const ni=document.getElementById("r_niche").value, ar=document.getElementById("r_area").value, skip=document.getElementById("r_skip").checked;
-  return ALL().filter(r=>r.endereco).filter(r=>!ni||r.niche===ni).filter(r=>{
+  return ALL().filter(r=>r.endereco&&!r.inativo).filter(r=>!ni||r.niche===ni).filter(r=>{
     if(!ar)return true; const i=ar.indexOf("::"), t=ar.slice(0,i), v=ar.slice(i+2);
     return t==="c"?(r.city===v):((r.bairro||"")===v);
   }).filter(r=>!(skip&&done[r.id]));
@@ -780,7 +810,9 @@ function diffLabel(o,n){
   const od=Object.keys(o.done||{}).length, nd=Object.keys(n.done||{}).length;
   if(nd>od)return "marcou "+(nd-od)+" como contatado";
   if(nd<od)return "desmarcou contatado";
-  const oo=o.overrides||{}, no=n.overrides||{}; let ret=0,al=0,obx=0;
+  const oo=o.overrides||{}, no=n.overrides||{};
+  for(const k in no){const a=oo[k]||{},b=no[k]||{}; if(b.inativo&&!a.inativo)return "inativou um contato"; if(a.inativo&&!b.inativo)return "reativou um contato";}
+  let ret=0,al=0,obx=0;
   for(const k in no){const a=oo[k]||{},b=no[k]||{}; if(b.date_return&&b.date_return!==a.date_return)ret++; if(b.alerta&&b.alerta!==a.alerta)al++; if(b.obs!==undefined&&b.obs!==a.obs)obx++;}
   if(ret>0)return "agendou retorno de "+ret;
   if(al>0)return "marcou um alerta";
