@@ -51,6 +51,10 @@ button.pri{background:linear-gradient(90deg,var(--sun1),var(--sun2));color:#111;
 .trash:hover{opacity:1}
 .pause{cursor:pointer;font-size:15px;opacity:.7;margin-right:10px}
 .pause:hover{opacity:1}
+.edit{cursor:pointer;font-size:14px;opacity:.6;margin-right:10px}
+.edit:hover{opacity:1}
+.motrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+#f_ativo.paused{background:#2a2233;color:#c9a6ff;border-color:#4a3a5a}
 tr.inativa td{opacity:.45}
 tr.inativa td.delcell{opacity:1}
 .inatag{display:inline-block;font-size:10.5px;padding:1px 8px;border-radius:20px;background:#2a2233;color:#c9a6ff;border:1px solid #4a3a5a;margin-left:6px;cursor:pointer;white-space:nowrap}
@@ -177,9 +181,10 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
   </div>
 </div>
 <div id="addPanel" hidden>
-  <h3>Novo contato</h3>
+  <h3 id="addTitle">Novo contato</h3>
   <div class="formgrid">
     <label class="req"><span>Nome</span><input id="f_nome" autocomplete="off"></label>
+    <label><span>Pessoa (quem atende)</span><input id="f_person" placeholder="ex: Carla, dona" autocomplete="off"></label>
     <label><span>Instagram (@ ou link)</span><input id="f_ig" placeholder="@fulano ou instagram.com/fulano" autocomplete="off"></label>
     <label><span>WhatsApp</span><input id="f_wa" placeholder="(45) 99999-9999" autocomplete="off"></label>
     <label><span>Cidade</span><input id="f_city" placeholder="Florianópolis / São José" autocomplete="off"></label>
@@ -191,6 +196,15 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
     <label><span>Último contato</span><input id="f_last" placeholder="DD.MM" autocomplete="off"></label>
     <label><span>Retorno</span><input id="f_ret" placeholder="DD.MM" autocomplete="off"></label>
     <label><span>Valor negociando</span><input id="f_val" placeholder="R$0,00 (vazio = zero)" autocomplete="off"></label>
+    <label style="grid-column:1/-1"><span>Observação</span><input id="f_obs" placeholder="ex: já tem videomaker, voltar em setembro, falar com a dona..." autocomplete="off"></label>
+  </div>
+  <div class="motrow">
+    <button type="button" id="f_ativo">✅ Entra nas rotas</button>
+    <span class="hint">motivo rápido (marca ⏸️ e anota):</span>
+    <button type="button" class="rbtn mot" data-m="Já tem produção">Já tem produção</button>
+    <button type="button" class="rbtn mot" data-m="Já tem agência">Já tem agência</button>
+    <button type="button" class="rbtn mot" data-m="Fechou">Fechou</button>
+    <button type="button" class="rbtn mot" data-m="Não vou captar">Não vou captar</button>
   </div>
   <div class="formbtns">
     <button id="saveContact" class="pri">Salvar contato</button>
@@ -286,6 +300,7 @@ let waPrefill=(localStorage.getItem("giscrm_waprefill")==="0")?false:true;
 let waTmpl=localStorage.getItem("giscrm_watmpl")||"Opa {nome}, tudo bem? Aqui é a Gislaine, da GF Môve (produtora de audiovisual). Posso te roubar 1 minutinho?";
 const isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||window.matchMedia("(max-width:680px)").matches;
 let sel=new Set();
+let editingId=null, editInativo=false;
 let overrides={}; try{overrides=JSON.parse(localStorage.getItem("giscrm_over")||"{}")}catch(e){overrides={}}
 let removed=[]; try{removed=JSON.parse(localStorage.getItem("giscrm_removed")||"[]")}catch(e){removed=[]}
 function saveRemoved(){localStorage.setItem("giscrm_removed",JSON.stringify(removed));}
@@ -300,7 +315,8 @@ function waFull(s){let d=(""+(s||"")).replace(/\D/g,"");if(!d)return"";if(d.leng
 function waDisp(full){if(!full)return"";let x=full.startsWith("55")?full.slice(2):full;let ddd=x.slice(0,2),rest=x.slice(2);if(rest.length===9)return`(${ddd}) ${rest.slice(0,5)}-${rest.slice(5)}`;if(rest.length===8)return`(${ddd}) ${rest.slice(0,4)}-${rest.slice(4)}`;return`(${ddd}) ${rest}`;}
 function retKey(s){const m=(""+(s||"")).match(/^(\d{1,2})\.(\d{1,2})/);if(!m)return 99999;return (+m[2])*31+(+m[1]);}
 function enrich(r){r.ig=r.handle?("https://instagram.com/"+r.handle):"";r.wa_disp=waDisp(r.wa);r.rk=retKey(r.date_return);r.s=[r.client,r.person,r.handle,r.city,r.niche,r.bairro,r.endereco,r.status,r.resp].join(" ").toLowerCase();return r;}
-function ALL(){return DATA.concat(added).filter(r=>removed.indexOf(r.id)<0).map(r=>{const o=overrides[r.id];if(!o)return r;const m=Object.assign({},r,o);m.rk=retKey(m.date_return);return m;});}
+const BASE_KEYS=["client","person","handle","wa","city","endereco","bairro","niche","status","resp","value","date_last","date_return"];
+function ALL(){return DATA.concat(added).filter(r=>removed.indexOf(r.id)<0).map(r=>{const o=overrides[r.id];if(!o)return r;const m=Object.assign({},r,o);if(BASE_KEYS.some(k=>k in o))enrich(m);else m.rk=retKey(m.date_return);return m;});}
 function firstName(s){s=(""+(s||"")).trim();return s?s.split(/\s+/)[0]:"";}
 function waHref(r){
   let base = isMobile ? `https://wa.me/${r.wa}` : (waMode==="app" ? `whatsapp://send?phone=${r.wa}` : waMode==="web" ? `https://web.whatsapp.com/send?phone=${r.wa}` : `https://wa.me/${r.wa}`);
@@ -368,7 +384,7 @@ function currentRows(){
     if(fHide&&done[r.id])return false;
     if(fInativo&&!r.inativo)return false;
     if(fRota&&lastRoute&&lastRoute.ids&&lastRoute.ids.indexOf(r.id)<0)return false;
-    if(q&&!r.s.includes(q))return false;
+    if(q&&!(r.s.includes(q)||(r.obs||"").toLowerCase().includes(q)))return false;
     return true;
   });
   rows.sort((a,b)=>{
@@ -407,7 +423,7 @@ function view(){
       <td class="mut" data-label="Últ. contato">${esc(r.date_last)||'—'}</td>
       <td data-label="Retorno">${ret}</td>
       <td class="mut" data-label="Valor">${r.value&&r.value!=='R$0.00'&&r.value!=='R$0,00'?esc(r.value):'—'}</td>
-      <td class="delcell" data-label="">${fLixeira?`<span class="restore" data-restore="${r.id}" title="Tirar da lixeira, volta pra lista">↩︎ restaurar</span>`:`<span class="pause" data-inativo="${r.id}" title="${r.inativo?'Reativar':'Inativar — fica salvo mas não entra na rota'}">${r.inativo?'▶️':'⏸️'}</span><span class="trash" data-del="${r.id}" title="Excluir este contato">🗑️</span>`}</td>
+      <td class="delcell" data-label="">${fLixeira?`<span class="restore" data-restore="${r.id}" title="Tirar da lixeira, volta pra lista">↩︎ restaurar</span>`:`<span class="edit" data-edit="${r.id}" title="Editar contato (endereço, nicho, retorno, observação...)">✏️</span><span class="pause" data-inativo="${r.id}" title="${r.inativo?'Reativar':'Inativar — fica salvo mas não entra na rota'}">${r.inativo?'▶️':'⏸️'}</span><span class="trash" data-del="${r.id}" title="Excluir este contato">🗑️</span>`}</td>
     </tr>`;
   }).join('');
   document.getElementById("count").textContent=`${rows.length} de ${ALL().length} contatos`;
@@ -415,8 +431,55 @@ function view(){
 }
 // ---- add / delete ----
 function saveAdded(){localStorage.setItem("giscrm_added",JSON.stringify(added));}
-document.getElementById("addBtn").addEventListener("click",()=>{const p=document.getElementById("addPanel");p.hidden=!p.hidden;if(!p.hidden){document.getElementById("f_nome").focus();window.scrollTo({top:0,behavior:'smooth'});}});
-document.getElementById("cancelAdd").addEventListener("click",()=>{document.getElementById("addPanel").hidden=true;});
+function resetForm(){
+  ["f_nome","f_person","f_ig","f_wa","f_city","f_end","f_bairro","f_last","f_ret","f_val","f_obs"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("f_status").value="Novo";document.getElementById("f_niche").value="";document.getElementById("f_resp").value="Gislaine";
+  editInativo=false;syncAtivoBtn();
+  document.getElementById("addTitle").textContent="Novo contato";
+  document.getElementById("saveContact").textContent="Salvar contato";
+}
+function syncAtivoBtn(){const b=document.getElementById("f_ativo");b.classList.toggle("paused",editInativo);b.textContent=editInativo?"⏸️ Fora das rotas":"✅ Entra nas rotas";}
+document.getElementById("f_ativo").addEventListener("click",()=>{editInativo=!editInativo;syncAtivoBtn();});
+document.querySelectorAll(".mot").forEach(b=>b.addEventListener("click",()=>{
+  editInativo=true;syncAtivoBtn();
+  const o=document.getElementById("f_obs"),m=b.dataset.m;
+  if(!o.value.trim())o.value=m;else if(o.value.toLowerCase().indexOf(m.toLowerCase())<0)o.value=o.value.trim()+" - "+m;
+}));
+function refreshRotaSel(){const p=document.getElementById("rotaPanel");if(p&&!p.hidden)fillRotaSel();}
+function openEdit(id){
+  const r=ALL().find(x=>x.id===id);if(!r)return;
+  editingId=id;editInativo=!!r.inativo;
+  const s=(i,v)=>{document.getElementById(i).value=v||"";};
+  s("f_nome",r.client);s("f_person",r.person);s("f_ig",r.handle);s("f_wa",r.wa_disp||r.wa);
+  s("f_city",r.city);s("f_end",r.endereco);s("f_bairro",r.bairro);s("f_niche",r.niche);
+  document.getElementById("f_resp").value=(r.resp==="Gislaine"||r.resp==="Juliana")?r.resp:"";
+  document.getElementById("f_status").value=["Novo","Hot","Negotiating","Cold","Freeze"].includes(r.status)?r.status:"Novo";
+  s("f_last",r.date_last);s("f_ret",r.date_return);s("f_val",(r.value&&r.value!=="R$0,00"&&r.value!=="R$0.00")?r.value:"");s("f_obs",r.obs);
+  syncAtivoBtn();
+  document.getElementById("addTitle").textContent="Editar: "+r.client;
+  document.getElementById("saveContact").textContent="Salvar alterações";
+  document.getElementById("addPanel").hidden=false;
+  window.scrollTo({top:0,behavior:'smooth'});document.getElementById("f_nome").focus();
+}
+function salvarEdicao(nome,handle,wa){
+  const g=id=>document.getElementById(id).value.trim();
+  const eid=editingId;const antes=ALL().find(x=>x.id===eid);if(!antes){editingId=null;return;}
+  let val=g("f_val");if(!val)val="R$0,00";
+  const upd={client:nome,person:g("f_person"),handle:handle,wa:wa,phone:wa?wa.replace(/^55/,''):"",
+    city:g("f_city"),endereco:g("f_end"),bairro:g("f_bairro"),niche:g("f_niche"),
+    resp:g("f_resp"),status:g("f_status"),date_last:g("f_last"),date_return:g("f_ret"),value:val,
+    obs:g("f_obs"),inativo:editInativo};
+  overrides[eid]=Object.assign({},overrides[eid]||{},upd);
+  localStorage.setItem("giscrm_over",JSON.stringify(overrides));
+  if(upd.endereco&&upd.endereco!==antes.endereco){
+    geoAddr(upd.endereco,upd.bairro,upd.city).then(gg=>{if(gg){setCoord(eid,gg);view();}});
+  }
+  editingId=null;document.getElementById("addPanel").hidden=true;resetForm();
+  const m=document.getElementById("stateMsg");if(m){m.textContent="✓ "+nome+" atualizado";setTimeout(()=>m.textContent="",3500);}
+  buildChips();view();fillNicheList();refreshRotaSel();
+}
+document.getElementById("addBtn").addEventListener("click",()=>{const p=document.getElementById("addPanel");if(p.hidden||editingId){editingId=null;resetForm();p.hidden=false;document.getElementById("f_nome").focus();window.scrollTo({top:0,behavior:'smooth'});}else{p.hidden=true;}});
+document.getElementById("cancelAdd").addEventListener("click",()=>{document.getElementById("addPanel").hidden=true;if(editingId){editingId=null;resetForm();}});
 document.getElementById("setBtn").addEventListener("click",()=>{
   const p=document.getElementById("setPanel");
   document.getElementById("s_mode").value=waMode;
@@ -440,6 +503,7 @@ document.getElementById("saveContact").addEventListener("click",()=>{
   if(!nome){alert("Coloque pelo menos o nome do contato.");document.getElementById("f_nome").focus();return;}
   const handle=normHandle(g("f_ig"));
   const wa=waFull(g("f_wa"));
+  if(editingId){salvarEdicao(nome,handle,wa);return;}
   // aviso de duplicado
   const pool=DATA.concat(added).map(r=>{const o=overrides[r.id];return o?Object.assign({},r,o):r;});
   const dup=pool.find(r=>(handle&&r.handle===handle)||(wa&&r.wa===wa));
@@ -449,10 +513,11 @@ document.getElementById("saveContact").addEventListener("click",()=>{
     if(!confirm(`Já existe "${dup.client}" com esse @ ou telefone${av}. Adicionar mesmo assim?`))return;}
   let val=g("f_val"); if(!val)val="R$0,00";
   const rec=enrich({
-    client:nome, person:"", handle:handle, phone:wa.replace(/^55/,''), wa:wa,
+    client:nome, person:g("f_person"), handle:handle, phone:wa.replace(/^55/,''), wa:wa,
     city:g("f_city"), resp:g("f_resp"), status:g("f_status"),
     date_last:g("f_last"), date_return:g("f_ret"), value:val,
     niche:g("f_niche"), endereco:g("f_end"), bairro:g("f_bairro"), cep:"", lat:null, lon:null,
+    obs:g("f_obs"), inativo:editInativo,
     source:"Manual", id:"u:"+Date.now()+"."+Math.floor(Math.random()*100000)
   });
   added.push(rec); saveAdded();
@@ -464,11 +529,10 @@ document.getElementById("saveContact").addEventListener("click",()=>{
       setTimeout(()=>m.textContent="",4000);view();
     });
   }
-  ["f_nome","f_ig","f_wa","f_city","f_end","f_bairro","f_last","f_ret","f_val"].forEach(id=>document.getElementById(id).value="");
-  document.getElementById("f_status").value="Novo";document.getElementById("f_niche").value="";
+  resetForm();
   const msg=document.getElementById("addMsg"); msg.textContent="✓ "+nome+" adicionado";
   setTimeout(()=>msg.textContent="",2500);
-  buildChips(); view(); fillNicheList(); document.getElementById("f_nome").focus();
+  buildChips(); view(); fillNicheList(); refreshRotaSel(); document.getElementById("f_nome").focus();
 });
 document.getElementById("tb").addEventListener("click",e=>{
   const waL=e.target.closest("a.wa"); if(waL){ if(isMobile)return; e.preventDefault();openIn("gfwa",waL.href);return;}
@@ -477,6 +541,7 @@ document.getElementById("tb").addEventListener("click",e=>{
   const rs=e.target.closest("[data-restore]"); if(rs){const id=rs.dataset.restore;removed=removed.filter(x=>x!==id);saveRemoved();buildChips();view();const m=document.getElementById("stateMsg");if(m){m.textContent="↩︎ contato restaurado da lixeira";setTimeout(()=>m.textContent="",3000);}return;}
   const pz=e.target.closest("[data-inativo]"); if(pz){toggleInativo(pz.dataset.inativo);return;}
   const ob=e.target.closest("[data-obs]"); if(ob){editObs(ob.dataset.obs);return;}
+  const ed=e.target.closest("[data-edit]"); if(ed){openEdit(ed.dataset.edit);return;}
   const d=e.target.closest("[data-del]"); if(!d)return;
   const id=d.dataset.del; const rec=ALL().find(x=>x.id===id); if(!rec)return;
   if(!confirm(`Excluir "${rec.client}"?`))return;
@@ -843,6 +908,9 @@ function diffLabel(o,n){
   if(nd>od)return "marcou "+(nd-od)+" como contatado";
   if(nd<od)return "desmarcou contatado";
   const oo=o.overrides||{}, no=n.overrides||{};
+  const IDK=["client","person","handle","wa","city","endereco","bairro","niche","status","resp","value"];
+  for(const k in no){const a=oo[k]||{},b=no[k]||{};
+    if(IDK.some(f=>(f in b)&&b[f]!==a[f])){const rr=DATA.concat(added).find(x=>x.id===k);return "editou "+(rr?rr.client:"um contato");}}
   for(const k in no){const a=oo[k]||{},b=no[k]||{}; if(b.inativo&&!a.inativo)return "inativou um contato"; if(a.inativo&&!b.inativo)return "reativou um contato";}
   let ret=0,al=0,obx=0;
   for(const k in no){const a=oo[k]||{},b=no[k]||{}; if(b.date_return&&b.date_return!==a.date_return)ret++; if(b.alerta&&b.alerta!==a.alerta)al++; if(b.obs!==undefined&&b.obs!==a.obs)obx++;}
