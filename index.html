@@ -67,6 +67,13 @@ td.delcell{text-align:right;width:34px}
 .obsadd:hover{opacity:1}
 .robs{cursor:pointer;font-size:14px;opacity:.7;margin-left:8px;flex:0 0 auto}
 .robs:hover{opacity:1}
+.rdel{cursor:pointer;color:#ff7b6b;font-size:13px;opacity:.55;margin-left:8px;flex:0 0 auto;border:1px solid var(--line);border-radius:7px;padding:2px 8px}
+.rdel:hover{opacity:1;border-color:#ff7b6b}
+.rout{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);color:var(--ink);font-size:13px}
+.radd{cursor:pointer;color:#7fe0a0;font-size:14px;border:1px solid var(--line);border-radius:7px;padding:2px 9px;flex:0 0 auto}
+.radd:hover{border-color:#7fe0a0}
+#r_fora summary{cursor:pointer;color:var(--mut);font-size:12.5px;padding:9px 0;user-select:none}
+#r_fora summary:hover{color:var(--ink)}
 .obstxt{display:block;color:#ffd479;font-size:11px;font-weight:400}
 #histPanel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:6px 0 14px}
 #histPanel h3{margin:0 0 4px;font-size:15px}
@@ -712,16 +719,22 @@ const IS_IOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
 const IS_APPCEL=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 let rStart=null, rotaAtual=[];
 let selNiche=new Set(), selArea=new Set();
-function rotaCands(){
+let rotaSkip=new Set(), rotaPin=new Set();
+const _rnorm=s=>(""+(s||"")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+const OBS_BLOQ=["ja tem producao","ja tem produtora","ja tem agencia","nao vou captar"];
+function obsBloqueada(r){const o=_rnorm(r.obs);return OBS_BLOQ.some(m=>o.indexOf(m)>=0);}
+function rotavel(r){return !r.inativo&&!obsBloqueada(r)&&(r.endereco||r.bairro||r.city);}
+function rotaCands(incluiTirados){
   const skip=document.getElementById("r_skip").checked;
   const nis=[...selNiche], ars=[...selArea];
-  return ALL().filter(r=>!r.inativo&&(r.endereco||r.bairro||r.city))
+  return ALL().filter(rotavel)
+    .filter(r=>incluiTirados||!rotaSkip.has(r.id))
     .filter(r=>!nis.length||nis.includes(r.niche))
     .filter(r=>!ars.length||ars.some(a=>{const i=a.indexOf("::"),t=a.slice(0,i),v=a.slice(i+2);return t==="c"?(r.city===v):((r.bairro||"")===v);}))
     .filter(r=>!(skip&&done[r.id]));
 }
 function fillRotaSel(){
-  const base=ALL().filter(r=>!r.inativo&&(r.endereco||r.bairro||r.city));
+  const base=ALL().filter(rotavel);
   const nc={};base.forEach(r=>{if(r.niche)nc[r.niche]=(nc[r.niche]||0)+1});
   document.getElementById("r_niches").innerHTML=
     `<span class="rchip${selNiche.size?'':' on'}" data-n="">Todos</span>`+
@@ -738,23 +751,30 @@ function centroid(list){let la=0,lo=0;list.forEach(r=>{la+=r.lat;lo+=r.lon});ret
 function montarRota(registrar){
   const N=Math.max(1,Math.min(20,parseInt(document.getElementById("r_n").value,10)||10));
   const cands=rotaCands(), out=document.getElementById("r_out");
-  if(!cands.length){rotaAtual=[];out.innerHTML='<div class="hint" style="margin-top:10px">Nenhum contato nesse filtro (fora os inativos). Muda o nicho ou a região.</div>';return;}
-  const com=cands.filter(hasCoord), sem=cands.filter(r=>!hasCoord(r));
-  const ordered=[];
-  if(com.length){
-    let cur=rStart||centroid(com); const pool=com.slice();
-    while(pool.length&&ordered.length<N){
-      pool.sort((a,b)=>hav(cur,a)-hav(cur,b));
-      const nx=pool.shift(); nx._d=hav(cur,nx); ordered.push(nx); cur=nx;
-    }
+  const foraOpen=!!(document.getElementById("r_fora")&&document.getElementById("r_fora").open);
+  if(!cands.length){
+    rotaAtual=[];
+    const todosV=rotaCands(true);
+    out.innerHTML='<div class="hint" style="margin-top:10px">Nenhum contato nesse filtro (fora os inativos e os "já tem produção/agência"). Muda o nicho ou a região.</div>'
+      +(todosV.length?`<details id="r_fora" open><summary>Fora desta rota (${todosV.length}) — toca no ➕ pra incluir</summary>${todosV.map(r=>`<div class="rout"><span>${esc(r.client)}<small class="mut"> · ${esc([r.bairro,r.city].filter(Boolean).join(" · "))}</small>${rotaSkip.has(r.id)?' <small class="mut">(você tirou)</small>':''}</span><span class="radd" data-radd="${esc(r.id)}" title="Incluir na rota">➕</span></div>`).join("")}</details>`:"");
+    return;
   }
-  sem.sort((a,b)=>(a.bairro||a.city||"").localeCompare(b.bairro||b.city||"")||a.client.localeCompare(b.client));
-  sem.forEach(r=>{if(ordered.length<N){r._d=null;ordered.push(r);}});
+  const pin=cands.filter(r=>rotaPin.has(r.id)), rest=cands.filter(r=>!rotaPin.has(r.id));
+  const NN=Math.max(N,Math.min(20,pin.length));
+  const ordered=[]; let cur=rStart||null;
+  const byBairro=(a,b)=>(a.bairro||a.city||"").localeCompare(b.bairro||b.city||"")||a.client.localeCompare(b.client);
+  const greedy=(pool,cap)=>{const p=pool.slice();while(p.length&&ordered.length<cap){if(!cur)cur=centroid(p);p.sort((a,b)=>hav(cur,a)-hav(cur,b));const nx=p.shift();nx._d=hav(cur,nx);ordered.push(nx);cur=nx;}};
+  greedy(pin.filter(hasCoord),20);
+  pin.filter(r=>!hasCoord(r)).sort(byBairro).forEach(r=>{if(ordered.length<20){r._d=null;ordered.push(r);}});
+  greedy(rest.filter(hasCoord),NN);
+  rest.filter(r=>!hasCoord(r)).sort(byBairro).forEach(r=>{if(ordered.length<NN){r._d=null;ordered.push(r);}});
   rotaAtual=ordered;
+  const todosC=rotaCands(true), inIds=new Set(ordered.map(r=>r.id)), fora=todosC.filter(r=>!inIds.has(r.id));
   let tot=0;ordered.forEach(r=>{if(r._d)tot+=r._d});
-  out.innerHTML='<div id="rlist" style="margin-top:12px">'+ordered.map((r,i)=>`<div class="rstop${done[r.id]?' rdone':''}" data-id="${esc(r.id)}"><input type="checkbox" class="rcbx" ${done[r.id]?'checked':''} title="Marcar que já passei aqui"><b class="n">${i+1}.</b><span><b>${esc(r.client)}</b><small>${esc([r.endereco,r.bairro,r.city].filter(Boolean).join(" · "))}${hasCoord(r)?'':' · sem 📍 (vai pelo endereço)'}</small>${r.obs?`<small class="obstxt">📝 ${esc(r.obs)}</small>`:''}</span>${r._d!=null?`<span class="rkm">${r._d<1?Math.round(r._d*1000)+" m":r._d.toFixed(1)+" km"}</span>`:''}<span class="robs" data-obs="${esc(r.id)}" title="Anotar observação">📝</span></div>`).join('')+'</div>'
+  out.innerHTML='<div id="rlist" style="margin-top:12px">'+ordered.map((r,i)=>`<div class="rstop${done[r.id]?' rdone':''}" data-id="${esc(r.id)}"><input type="checkbox" class="rcbx" ${done[r.id]?'checked':''} title="Marcar que já passei aqui"><b class="n">${i+1}.</b><span><b>${esc(r.client)}</b><small>${esc([r.endereco,r.bairro,r.city].filter(Boolean).join(" · "))}${hasCoord(r)?'':' · sem 📍 (vai pelo endereço)'}</small>${r.obs?`<small class="obstxt">📝 ${esc(r.obs)}</small>`:''}</span>${r._d!=null?`<span class="rkm">${r._d<1?Math.round(r._d*1000)+" m":r._d.toFixed(1)+" km"}</span>`:''}<span class="robs" data-obs="${esc(r.id)}" title="Anotar observação">📝</span><span class="rdel" data-rdel="${esc(r.id)}" title="Tirar desta rota (não mexe no cadastro)">✕</span></div>`).join('')+'</div>'
+    +(fora.length?`<details id="r_fora"${foraOpen?" open":""}><summary>Fora desta rota (${fora.length}) — abre e toca no ➕ pra incluir</summary>${fora.map(r=>`<div class="rout"><span>${esc(r.client)}<small class="mut"> · ${esc([r.bairro,r.city].filter(Boolean).join(" · "))}</small>${rotaSkip.has(r.id)?' <small class="mut">(você tirou)</small>':''}</span><span class="radd" data-radd="${esc(r.id)}" title="Incluir na rota">➕</span></div>`).join("")}</details>`:"")
     +`<div class="formbtns"><button id="r_routerra" class="pri">🚀 Montar no Routerra</button><button id="r_maps">🧭 Abrir no Google Maps</button><button id="r_csv">⬇️ Planilha (backup)</button><button id="r_ret">📅 Agendar retorno dos visitados</button><span class="hint">${ordered.length} parada(s)${tot?` · ~${tot.toFixed(1)} km em linha reta`:''}</span></div>`
-    +'<div class="hint" style="margin-top:8px"><b>🚀 Montar no Routerra</b> já copia os endereços na ordem certa: no Routerra, toca em <b>➕ (nova rota) → colar</b> — ele reconhece a lista e otimiza sozinho. <b>🧭 Google Maps</b> abre a rota pronta sem app nenhum. <b>⬇️ Planilha</b> é backup (o Routerra também importa arquivo). Conforme passa em cada lugar, marca a <b>caixinha ✓</b> e anota no <b>📝</b> o que rolou (ex: já tem videomaker, chamar no WhatsApp). Pra achar os contatos dessa rota depois, no meio de todo mundo, usa o chip <b>🗺️ Última rota</b> lá em cima. No fim do dia, <b>📅 Agendar retorno</b>.</div>';
+    +'<div class="hint" style="margin-top:8px"><b>🚀 Montar no Routerra</b> já copia os endereços na ordem certa: no Routerra, toca em <b>➕ (nova rota) → colar</b> — ele reconhece a lista e otimiza sozinho. <b>🧭 Google Maps</b> abre a rota pronta sem app nenhum. <b>⬇️ Planilha</b> é backup (o Routerra também importa arquivo). Não quer uma parada? Toca no <b>✕</b> dela (sai só desta rota, o motor completa com o próximo mais perto). Quer incluir alguém? Abre <b>Fora desta rota</b> e toca no <b>➕</b>. Conforme passa em cada lugar, marca a <b>caixinha ✓</b> e anota no <b>📝</b> o que rolou (ex: já tem videomaker, chamar no WhatsApp). Pra achar os contatos dessa rota depois, no meio de todo mundo, usa o chip <b>🗺️ Última rota</b> lá em cima. No fim do dia, <b>📅 Agendar retorno</b>.</div>';
   document.getElementById("r_routerra").addEventListener("click",montarRouterra);
   document.getElementById("r_csv").addEventListener("click",enviarCsvCircuit);
   document.getElementById("r_maps").addEventListener("click",()=>window.open(mapsUrl(),"_blank"));
@@ -875,10 +895,26 @@ async function localizarPendentes(){
 }
 document.getElementById("rotaBtn").addEventListener("click",()=>{
   const p=document.getElementById("rotaPanel");p.hidden=!p.hidden;
-  if(!p.hidden){fillRotaSel();document.getElementById("r_out").innerHTML="";window.scrollTo({top:0,behavior:"smooth"});}
+  if(!p.hidden){rotaSkip.clear();rotaPin.clear();rotaAtual=[];fillRotaSel();document.getElementById("r_out").innerHTML="";window.scrollTo({top:0,behavior:"smooth"});}
 });
 document.getElementById("r_close").addEventListener("click",()=>{document.getElementById("rotaPanel").hidden=true;});
 document.getElementById("r_build").addEventListener("click",()=>montarRota(true));
+function syncRotaEditada(){
+  if(!rotaAtual.length)return;
+  lastRoute={ts:Date.now(),ids:rotaAtual.map(r=>r.id)};
+  localStorage.setItem("giscrm_lastroute",JSON.stringify(lastRoute));
+  buildChips();
+}
+document.getElementById("r_out").addEventListener("click",e=>{
+  const rd=e.target.closest("[data-rdel]");
+  if(rd){rotaSkip.add(rd.dataset.rdel);rotaPin.delete(rd.dataset.rdel);montarRota(false);syncRotaEditada();return;}
+  const ra=e.target.closest("[data-radd]");
+  if(ra){
+    if(rotaAtual.length>=20){alert("A rota já está com 20 paradas (teto do Routerra grátis). Tira uma no ✕ antes de incluir outra.");return;}
+    const n=document.getElementById("r_n");n.value=Math.min(20,(parseInt(n.value,10)||10)+1);
+    rotaPin.add(ra.dataset.radd);rotaSkip.delete(ra.dataset.radd);montarRota(false);syncRotaEditada();return;
+  }
+});
 document.getElementById("r_loc").addEventListener("click",localizarPendentes);
 document.getElementById("r_gps").addEventListener("click",()=>{
   const b=document.getElementById("r_gps");
