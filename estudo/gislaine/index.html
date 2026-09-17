@@ -268,6 +268,9 @@ table{width:100%;border-collapse:collapse;font-size:15px;margin:12px 0}td,th{bor
   <p>Tudo que você respondeu aqui, junto. Copie pro seu caderno, mande pra Juliana, ou imprima e cole na parede.</p>
   <button class="btn o" id="gerar">montar meu mapa</button>
   <button class="btn g" id="limpar">apagar e começar de novo</button>
+  <button class="btn" id="enviar">enviar pra Juliana</button>
+  <button class="btn g" id="baixar">baixar respostas</button>
+  <label class="btn g" style="cursor:pointer">carregar respostas <input type="file" id="carregar" accept=".json" style="display:none"></label>
   <div class="mapa" id="mapa">clique em "montar meu mapa"</div>
   <h3>o que eu faria na sua pele, nesta ordem</h3>
   <ol>
@@ -326,6 +329,13 @@ minhas 3 apostas: ${aps}
 minha primeira semana: ${(st.sem||[]).join(' · ')||'…'}
 regra: se começa na cabeça do empresário, posta. se começa na GF, vai pro destaque.`});
   $('#limpar').addEventListener('click',()=>{if(confirm('apagar suas respostas?')){localStorage.removeItem(K);location.reload()}});
+  
+  // enviar / baixar / carregar
+  const nomeDoc=document.title;
+  $('#enviar').addEventListener('click',async()=>{$('#gerar').click();const txt=nomeDoc+' · respostas\n\n'+$('#mapa').textContent+'\n\n(arquivo completo: use "baixar respostas")';
+    if(navigator.share){try{await navigator.share({title:nomeDoc,text:txt})}catch(e){}}else{await navigator.clipboard.writeText(txt);alert('copiado. cole no WhatsApp da Juliana.')}});
+  $('#baixar').addEventListener('click',()=>{$('#gerar').click();const blob=new Blob([JSON.stringify({doc:K,quando:new Date().toISOString(),respostas:st},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=K+'-respostas.json';a.click()});
+  $('#carregar').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(d.doc!==K){alert('esse arquivo é do outro documento.');return}localStorage.setItem(K,JSON.stringify(d.respostas));location.reload()}catch(err){alert('arquivo inválido')}};r.readAsText(f)});
   window.addEventListener('scroll',()=>{const h=document.body.scrollHeight-innerHeight;$('#prog').style.width=(100*scrollY/h)+'%'});
 })();
 </script>
