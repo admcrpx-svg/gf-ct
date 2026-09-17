@@ -608,9 +608,8 @@ th{font-family:Caveat,cursive;font-size:20px;font-weight:700}
   <p>Tudo que você escreveu neste livro está aqui embaixo, montado. Não é um plano pronto. É o rascunho que você faria numa folha depois de uma conversa boa. Copie, imprima, mude.</p>
   <button class="btn o" id="gerar">montar meu mapa com o que eu respondi</button>
   <button class="btn g" id="limpar">apagar tudo e começar de novo</button>
-  <button class="btn" id="enviar">enviar pra Juliana</button>
-  <button class="btn g" id="baixar">baixar respostas</button>
-  <label class="btn g" style="cursor:pointer">carregar respostas <input type="file" id="carregar" accept=".json" style="display:none"></label>
+  <button class="btn o" id="finalizar" style="font-size:17px;padding:12px 22px">finalizei: salvar minhas respostas e mandar</button>
+  <div class="feed" id="ffinal"></div>
   <div class="mapa" id="mapa">clique em "montar meu mapa"</div>
   <h3>e depois do mapa?</h3>
   <p>Três coisas, nesta ordem, e nada mais: (1) reescreva a bio em três linhas; (2) escolha três posts que falem na voz do cliente, com o que você já tem no celular; (3) responda todo comentário por 30 dias. Se em 30 dias alguém mandar um post seu pra outra pessoa, o livro cumpriu o que prometeu.</p>
@@ -682,12 +681,49 @@ pergunta que nunca fiz a uma produtora (ou nunca me fizeram): ${g('p5q')}`;
   // progress
   const pages=[...document.querySelectorAll('.page')];
   
-  // enviar / baixar / carregar
   const nomeDoc=document.title;
-  $('#enviar').addEventListener('click',async()=>{$('#gerar').click();const txt=nomeDoc+' · respostas\n\n'+$('#mapa').textContent+'\n\n(arquivo completo: use "baixar respostas")';
-    if(navigator.share){try{await navigator.share({title:nomeDoc,text:txt})}catch(e){}}else{await navigator.clipboard.writeText(txt);alert('copiado. cole no WhatsApp da Juliana.')}});
-  $('#baixar').addEventListener('click',()=>{$('#gerar').click();const blob=new Blob([JSON.stringify({doc:K,quando:new Date().toISOString(),respostas:st},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=K+'-respostas.json';a.click()});
-  $('#carregar').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(d.doc!==K){alert('esse arquivo é do outro documento.');return}localStorage.setItem(K,JSON.stringify(d.respostas));location.reload()}catch(err){alert('arquivo inválido')}};r.readAsText(f)});
+  // finalizar: gera um documento com todas as respostas e abre pra mandar
+  $('#finalizar').addEventListener('click',async()=>{
+    $('#gerar').click();
+    const esc=t=>String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+    const rows=[];
+    document.querySelectorAll('.page').forEach(pg=>{
+      const cap=(pg.querySelector('h2')||pg.querySelector('h1')||{}).textContent||'';
+      const items=[];
+      pg.querySelectorAll('.q').forEach(q=>{
+        const per=[...q.querySelectorAll('.hand')].map(h=>h.textContent.trim());
+        const ans=[];
+        q.querySelectorAll('input[type=text],textarea').forEach(i=>{if(i.value.trim())ans.push((i.placeholder?i.placeholder.split(/[(:]/)[0].trim()+': ':'')+i.value.trim())});
+        q.querySelectorAll('select').forEach(s=>{if(s.value)ans.push(s.value)});
+        q.querySelectorAll('input[type=range]').forEach(r=>ans.push(r.value+'/'+r.max));
+        q.querySelectorAll('.opt.ok,.opt.no,.opt.sel').forEach(o=>ans.push(o.textContent.trim()+(o.classList.contains('ok')?' (certo)':o.classList.contains('no')?' (errou)':'')));
+        q.querySelectorAll('.feed').forEach(f=>{if(f.textContent.trim())ans.push('→ '+f.textContent.trim())});
+        const rv=q.querySelector('.reveal.on'); if(rv) ans.push('(viu a resposta pronta)');
+        if(per.length||ans.length) items.push({p:per.join(' / '),a:ans});
+      });
+      pg.querySelectorAll('.check').forEach(c=>{
+        const on=[...c.querySelectorAll('input:checked')].map(i=>i.parentElement.textContent.trim());
+        const h=c.previousElementSibling&&c.previousElementSibling.tagName==='H3'?c.previousElementSibling.textContent:'marcou';
+        items.push({p:h,a:on.length?on:['nenhum marcado']});
+      });
+      if(items.length) rows.push({cap,items});
+    });
+    const mapa=$('#mapa').textContent;
+    const quando=new Date().toLocaleString('pt-BR');
+    const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(nomeDoc)} · respostas</title>
+<style>body{margin:0;background:#ebe4d4;font-family:Inter,system-ui,sans-serif;color:#2b2622;line-height:1.55}.w{max-width:760px;margin:0 auto;padding:28px 18px}.pg{background:#f4efe4;border:1px solid #c9bfae;border-radius:6px;padding:26px 28px;margin-bottom:18px}h1{font-family:Georgia,serif;font-size:30px;margin:0 0 4px}h2{font-family:Georgia,serif;font-size:20px;margin:0 0 10px}.k{font-family:'Comic Sans MS',cursive;color:#5a524a;font-size:15px}.p{font-family:'Comic Sans MS',cursive;color:#e8622a;font-size:18px;margin:12px 0 2px}.a{margin:0 0 4px 12px;white-space:pre-wrap}.mapa{background:#fff9ee;border:1.5px solid #f2a071;border-radius:10px;padding:14px;white-space:pre-wrap;font-family:'Comic Sans MS',cursive;font-size:18px}@media print{body{background:#fff}.pg{border:0}}</style></head><body><div class="w">
+<div class="pg"><div class="k">respostas de ${esc((st.nome||'Gislaine'))} · ${esc(quando)}</div><h1>${esc(nomeDoc)}</h1><div class="k">documento gerado pelo botão "finalizei". é só mandar este arquivo.</div></div>
+<div class="pg"><h2>o mapa</h2><div class="mapa">${esc(mapa)}</div></div>
+${rows.map(r=>`<div class="pg"><h2>${esc(r.cap)}</h2>${r.items.map(i=>`<div class="p">${esc(i.p)}</div>${i.a.length?i.a.map(a=>`<div class="a">${esc(a)}</div>`).join(''):'<div class="a" style="color:#5a524a">(não respondeu)</div>'}`).join('')}</div>`).join('')}
+</div></body></html>`;
+    const fname=(K.includes('gislaine')?'gislaine-mapa':'estudo')+'-respostas-'+new Date().toISOString().slice(0,10)+'.html';
+    const file=new File([html],fname,{type:'text/html'});
+    let shared=false;
+    if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:nomeDoc});shared=true}catch(e){}}
+    if(!shared){const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=fname;a.click()}
+    $('#ffinal').textContent=shared?'pronto. mandado.':'salvo como "'+fname+'". agora é só mandar esse arquivo pra Juliana (WhatsApp, e-mail, o que preferir).';
+    st._finalizado=quando;save();
+  });
   window.addEventListener('scroll',()=>{const h=document.body.scrollHeight-innerHeight;$('#prog').style.width=(100*scrollY/h)+'%'});
 })();
 </script>
