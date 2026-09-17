@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gislaine, a GF e o feed</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#f4efe4;--paper2:#ebe4d4;--ink:#2b2622;--ink2:#5a524a;--laranja:#e8622a;--laranja2:#f2a071;--line:#c9bfae;--ok:#3f7d4f;--no:#c25b3f}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper2);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:17px;line-height:1.6}
+.book{max-width:820px;margin:0 auto;padding:24px 16px 80px}
+.page{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:48px 44px;margin:0 0 28px;position:relative;box-shadow:0 2px 0 #d8cfbd,0 12px 30px rgba(60,40,20,.08);background-image:repeating-linear-gradient(0deg,transparent 0 31px,rgba(0,0,0,.025) 31px 32px)}
+.page::after{content:attr(data-n);position:absolute;right:22px;bottom:14px;font-family:Caveat,cursive;font-size:20px;color:var(--ink2)}
+h1,h2,h3{font-family:Fraunces,serif;font-weight:600;line-height:1.15;margin:0 0 14px}
+h1{font-size:44px}h2{font-size:30px}h3{font-size:21px;margin-top:26px}
+.hand{font-family:Caveat,cursive;font-weight:700;color:var(--laranja);font-size:26px;line-height:1.1}
+.kicker{font-family:Caveat,cursive;font-size:22px;color:var(--ink2);margin-bottom:4px}
+p{margin:0 0 14px}em{font-family:Fraunces,serif;font-style:italic}.l{color:var(--laranja);font-weight:600}
+blockquote{margin:18px 0;padding:10px 18px;border-left:3px solid var(--laranja);font-family:Fraunces,serif;font-style:italic;font-size:19px}
+.q{border:2px dashed var(--laranja2);border-radius:10px;padding:16px 18px;margin:20px 0;background:rgba(255,255,255,.35)}
+.q .hand{font-size:24px;margin-bottom:6px}
+.q input[type=text],.q textarea,.q select{width:100%;font:inherit;font-size:16px;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:#fffdf8;color:var(--ink)}
+.q textarea{min-height:64px;resize:vertical}
+.btn{display:inline-block;font:600 15px Inter,sans-serif;background:var(--ink);color:var(--paper);border:0;border-radius:999px;padding:9px 16px;cursor:pointer;margin:6px 6px 0 0}
+.btn.o{background:var(--laranja)}.btn.g{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
+.reveal{display:none;margin-top:12px;padding:12px 14px;border-radius:8px;background:#fff9ee;border:1px solid var(--laranja2)}.reveal.on{display:block}
+.opt{display:block;width:100%;text-align:left;font:500 16px Inter;background:#fffdf8;border:1.5px solid var(--line);border-radius:8px;padding:10px 12px;margin:6px 0;cursor:pointer;color:var(--ink)}
+.opt.ok{border-color:var(--ok);background:#eef6ef}.opt.no{border-color:var(--no);background:#fbeeea}.opt.sel{border-color:var(--laranja);background:#fff3ea}
+.feed{margin-top:8px;font-family:Caveat,cursive;font-size:22px;color:var(--ink2)}
+.fig{margin:22px 0;text-align:center}.fig svg{max-width:100%;height:auto}.fig .cap{font-family:Caveat,cursive;font-size:20px;color:var(--ink2);margin-top:4px}
+.src{margin:16px 0 0;border-top:1px dotted var(--line);padding-top:10px;font-size:14px;color:var(--ink2)}.src summary{cursor:pointer;font-family:Caveat,cursive;font-size:21px;color:var(--ink)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:640px){.two,.three{grid-template-columns:1fr}.page{padding:30px 20px}h1{font-size:34px}}
+.check{list-style:none;padding:0;margin:8px 0}.check li{margin:6px 0}.check label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}.check input{margin-top:5px;accent-color:var(--laranja)}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin:8px 0 16px}.bar i{display:block;height:100%;background:var(--laranja);width:0;transition:width .4s}
+.note{font-family:Caveat,cursive;font-size:21px;color:var(--ink2);transform:rotate(-1.2deg);display:inline-block}
+.tag{display:inline-block;font:600 12px Inter;letter-spacing:.06em;text-transform:uppercase;background:var(--ink);color:var(--paper);padding:3px 8px;border-radius:4px;margin-right:6px}
+.tag.o{background:var(--laranja)}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:12px 0}td,th{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}th{font-family:Caveat,cursive;font-size:20px;font-weight:700}
+.card{border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;background:#fffdf8}
+.card .hand{font-size:22px}
+.mapa{background:#fff9ee;border:1.5px solid var(--laranja2);border-radius:10px;padding:14px 16px;white-space:pre-wrap;font-family:Caveat,cursive;font-size:22px;line-height:1.35;min-height:120px}
+.sticky{position:sticky;top:0;z-index:5;background:var(--paper2);padding:8px 0 4px}.sticky .bar{margin:0}
+.slot{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center;margin:8px 0}
+.slot b{font-family:Caveat,cursive;font-size:22px}
+.score{font-family:Fraunces,serif;font-size:48px;color:var(--laranja);font-weight:600;line-height:1}
+@media print{html,body{background:#fff}.book{max-width:none;padding:0}.page{page-break-after:always;box-shadow:none;border:0;border-radius:0;margin:0;min-height:96vh}.sticky,.btn{display:none}.reveal{display:block}}
+</style>
+</head>
+<body>
+<div class="book">
+<div class="sticky"><div class="bar"><i id="prog"></i></div></div>
+
+<!-- CAPA -->
+<section class="page" data-n="1">
+  <div class="kicker">documento pessoal · setembro de 2026</div>
+  <h1>Gislaine, a GF e o feed</h1>
+  <p class="hand" style="font-size:30px">o que você quer, por que vale, onde é diferente, onde pode escorregar, e onde fura a bolha</p>
+  <div class="fig">
+    <svg viewBox="0 0 640 250" xmlns="http://www.w3.org/2000/svg">
+      <defs><filter id="sk"><feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.2"/></filter></defs>
+      <g filter="url(#sk)" fill="none" stroke="#2b2622" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <!-- sun (the Ô) -->
+        <circle cx="320" cy="90" r="34" stroke="#e8622a" stroke-width="3"/>
+        <g stroke="#e8622a"><path d="M320 40v-14M320 140v14M270 90h-14M370 90h14M285 55l-10-10M355 55l10-10M285 125l-10 10M355 125l10 10"/></g>
+        <!-- road -->
+        <path d="M40 220c100-40 200-40 280-20s180 40 280 0"/>
+        <path d="M60 212l14-4M120 200l14-2M200 196l14 0M300 202l14 4M420 214l14 2M520 208l14-4" stroke-opacity=".6"/>
+        <!-- two figures walking -->
+        <circle cx="240" cy="160" r="9"/><path d="M240 169v24M240 178l-10 10M240 178l10 8M240 193l-6 18M240 193l8 16"/>
+        <circle cx="270" cy="158" r="9"/><path d="M270 167v24M270 176l-10 8M270 176l12 8M270 191l-6 18M270 191l8 16"/>
+        <!-- camera on shoulder -->
+        <rect x="278" y="168" width="18" height="12" rx="2"/>
+      </g>
+      <text x="90" y="60" font-family="Caveat" font-size="22" fill="#5a524a">gf môve</text>
+      <text x="430" y="60" font-family="Caveat" font-size="22" fill="#e8622a">sempre em movimento</text>
+    </svg>
+  </div>
+  <p>Este documento é a continuação do estudo, só que agora com nome e sobrenome. Ele cruza três coisas: o brief que você escreveu, os 178 posts que a gente dissecou de Tono, Insane e Azzero, e o que eu sei da GF (os cases, os motores, o rebrand de GF Films pra GF MÔVE, a Juliana em Cascavel, você em Floripa). Ele também faz perguntas. Responda de verdade, porque no fim ele monta o seu mapa.</p>
+  <div class="q">
+    <div class="hand">antes de começar: hoje, o Instagram da GF te dá mais orgulho ou mais vergonha?</div>
+    <button class="opt" data-q="q0" data-v="orgulho">orgulho</button>
+    <button class="opt" data-q="q0" data-v="meio">meio a meio</button>
+    <button class="opt" data-q="q0" data-v="vergonha">vergonha, por isso estou aqui</button>
+    <div class="feed" id="fq0"></div>
+  </div>
+</section>
+
+<!-- 1. O QUE VOCÊ QUER -->
+<section class="page" data-n="2">
+  <div class="kicker">1</div>
+  <h2>O que você quer (devolvido como espelho)</h2>
+  <p>Eu li seu brief três vezes. Tirando o jargão, você quer quatro coisas, e elas cabem numa frase cada:</p>
+  <div class="three">
+    <div class="card"><div class="hand">1. parar de ser vitrine</div>trabalhos entregues sem direção, nichos misturados, capa sem padrão, "GF Films" ainda aparecendo</div>
+    <div class="card"><div class="hand">2. conversar com o empresário</div>a mensagem vale pra qualquer dono de negócio; os nichos são só matéria-prima</div>
+    <div class="card"><div class="hand">3. ter cara própria</div>creme, escuro, laranja, minúscula, uma palavra laranja, "sempre em movimento" em todo slide</div>
+  </div>
+  <div style="height:12px"></div>
+  <div class="card"><div class="hand">4. chegar na fase 2 sem susto</div>primeiro o acervo, depois você aparecendo: perfil que dá vergonha, timidez pra gravar, "o que eu faria no negócio X"</div>
+  <p style="margin-top:16px">O que me chamou atenção: você não pediu "crescer seguidores". Pediu <span class="l">autoridade que faça o empresário pensar em contratar</span>. Isso muda tudo, porque a métrica não é alcance, é mensagem no direct de dono de negócio. E é exatamente o que as três referências que mais converteram fazem: a Tono tem 1.191 seguidores e um perfil que vende.</p>
+  <div class="q">
+    <div class="hand">coloque as quatro em ordem do que te tira mais o sono (1 = mais)</div>
+    <div class="slot"><b>1º</b><select class="ord" id="o1"><option value="">escolha</option><option>parar de ser vitrine</option><option>conversar com o empresário</option><option>ter cara própria</option><option>chegar na fase 2 sem susto</option></select></div>
+    <div class="slot"><b>2º</b><select class="ord" id="o2"><option value="">escolha</option><option>parar de ser vitrine</option><option>conversar com o empresário</option><option>ter cara própria</option><option>chegar na fase 2 sem susto</option></select></div>
+    <div class="slot"><b>3º</b><select class="ord" id="o3"><option value="">escolha</option><option>parar de ser vitrine</option><option>conversar com o empresário</option><option>ter cara própria</option><option>chegar na fase 2 sem susto</option></select></div>
+    <div class="feed" id="ford"></div>
+  </div>
+</section>
+
+<!-- 2. POR QUE -->
+<section class="page" data-n="3">
+  <div class="kicker">2</div>
+  <h2>Por que você deve fazer isso agora (e não "quando der")</h2>
+  <p>Três razões, uma de fora, uma de dentro, uma sua.</p>
+  <h3>a de fora: o Instagram de 2026 passou a pagar pelo que a GF sabe fazer</h3>
+  <p>Os três sinais que o Mosseri confirmou (assistido até o fim, enviado pra alguém, curtido) premiam vídeo com história. A regra de originalidade de abril de 2026 tira recomendação de quem posta trend e banco de imagem. E o público disse à Sprout que quer conteúdo feito por gente. Uma produtora que grava bastidor real no cliente está do lado certo das três regras sem fazer esforço.</p>
+  <h3>a de dentro: a GF tem acervo parado</h3>
+  <p>Dom Guilherme (cozinha, cenário, pratos, processo), Yellow (pratos, bastidor com cenário), cortes da Dra. Larissa, takes do imóvel. Isso é um mês de conteúdo já gravado. O custo de começar é zero câmera. É só direção e montagem, que é o que a Juliana e o motor fazem.</p>
+  <h3>a sua: você já grava pra você</h3>
+  <p>Você começou pelo seu perfil pessoal. Isso significa que a fase 2 (a sócia aparecendo) não é um salto no escuro; é mudar o assunto. As três referências mostram que o pilar pessoal (a história de quem faz) é o que mais aproxima. A Tono ficou com o pai fotógrafo, a Insane com "não é mais só o Gui", a Azzero com "eu também travo".</p>
+  <div class="fig">
+    <svg viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg">
+      <g filter="url(#sk)" fill="none" stroke="#2b2622" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <!-- three gears meeting -->
+        <circle cx="140" cy="100" r="42"/><circle cx="320" cy="100" r="42"/><circle cx="500" cy="100" r="42" stroke="#e8622a" stroke-width="3"/>
+        <g stroke-opacity=".6"><path d="M140 58v-10M140 142v10M98 100h-10M182 100h10M320 58v-10M320 142v10M278 100h-10M362 100h10"/></g>
+        <g stroke="#e8622a"><path d="M500 58v-10M500 142v10M458 100h-10M542 100h10"/></g>
+        <path d="M182 100h96M362 100h96" stroke-dasharray="4 5"/>
+      </g>
+      <g font-family="Caveat" font-size="20" fill="#2b2622" text-anchor="middle">
+        <text x="140" y="106">a rede paga</text><text x="320" y="106">o acervo existe</text><text x="500" y="106" fill="#e8622a">você já grava</text>
+        <text x="320" y="185" fill="#5a524a">quando as três engrenagens giram juntas, a hora é agora.</text>
+      </g>
+    </svg>
+  </div>
+  <div class="q">
+    <div class="hand">qual das três razões você não tinha percebido antes?</div>
+    <input type="text" id="razao" placeholder="a de fora, a de dentro ou a sua, e por quê">
+  </div>
+</section>
+
+<!-- 3. DIFERENCIAL -->
+<section class="page" data-n="4">
+  <div class="kicker">3</div>
+  <h2>Seu diferencial (o que nenhuma das três tem)</h2>
+  <p>Depois de ver 178 posts, dá pra dizer com segurança o que a GF tem e elas não. Não é opinião; é o que apareceu na comparação.</p>
+  <table>
+    <tr><th>o que a GF tem</th><th>Tono</th><th>Insane</th><th>Azzero</th></tr>
+    <tr><td><b>Bastidor real no negócio do cliente</b> (cozinha, balcão), não estúdio</td><td>estúdio + casa</td><td>estúdio + marcas grandes</td><td>estúdio próprio 40%</td></tr>
+    <tr><td><b>Produtora, não agência</b> (não vende tráfego, gestão, mentoria)</td><td>produtora</td><td>virou agência nos fixados</td><td>vende mentoria e LUT</td></tr>
+    <tr><td><b>Cidade média, empresário local</b>, sem nicho fechado</td><td>Sorocaba, parecido</td><td>SP, marca grande</td><td>médicas do Brasil todo</td></tr>
+    <tr><td><b>Duas sócias em duas cidades</b> (Cascavel + Floripa)</td><td>uma dona</td><td>fundador + sócia</td><td>duas sócias, 1 cidade</td></tr>
+    <tr><td><b>Laranja livre + assinatura em todo slide</b></td><td>vermelho/amarelo, sem assinatura em reel</td><td>laranja só em deck</td><td>itálico, sem cor</td></tr>
+    <tr><td><b>Motor de criativos + motor de sites</b> na mesma casa</td><td>só reels</td><td>vídeo + foto</td><td>vídeo + foto de brinde</td></tr>
+  </table>
+  <p>A linha que mais vale é a primeira. As três gravam muito em estúdio. A GF grava <em>no lugar onde o cliente ganha dinheiro</em>. Isso não é limitação, é a única coisa que ninguém copia: o bastidor da GF é o negócio do cliente funcionando.</p>
+  <div class="q">
+    <div class="hand">escolha a frase que você diria pra um dono de restaurante que perguntou "por que vocês?"</div>
+    <button class="opt" data-q="q3" data-v="a">"a gente tem equipamento profissional e edição cinematográfica"</button>
+    <button class="opt" data-q="q3" data-v="b">"a gente grava dentro do seu negócio, no seu horário, e você não precisa aparecer se não quiser"</button>
+    <button class="opt" data-q="q3" data-v="c">"a gente cuida do seu Instagram inteiro, do post ao tráfego"</button>
+    <div class="feed" id="fq3"></div>
+  </div>
+</section>
+
+<!-- 4. ONDE PODE ERRAR LÁ NA FRENTE -->
+<section class="page" data-n="5">
+  <div class="kicker">4</div>
+  <h2>Onde você pode errar lá na frente</h2>
+  <p>Não hoje. Daqui a dois, quatro, seis meses. Eu vi cada um desses erros acontecer em uma das três referências, e cada um tem um sinal de alerta que aparece antes.</p>
+  <table>
+    <tr><th>quando</th><th>o erro</th><th>o sinal de alerta</th><th>quem caiu</th></tr>
+    <tr><td>semana 6</td><td>voltar a ser vitrine "só dessa vez" porque o cliente pediu pra postar o vídeo</td><td>um post com "projeto realizado para @x" sem tese na capa</td><td>as três</td></tr>
+    <tr><td>mês 2</td><td>o pilar "dor de aparecer" some porque parece repetitivo</td><td>duas semanas sem post na voz do cliente</td><td>Insane (nunca teve)</td></tr>
+    <tr><td>mês 3</td><td>reel de 90 s "porque tinha muita coisa pra falar"</td><td>o roteiro passou de 5 linhas</td><td>Insane (2 min), Tono (111 s)</td></tr>
+    <tr><td>mês 3</td><td>aceitar um cliente de nicho fora da grade (tatuagem, automotivo) e postar</td><td>"mas ficou tão bonito"</td><td>Tono (grade misturada)</td></tr>
+    <tr><td>mês 4</td><td>virar agência: "a gente também faz seu tráfego"</td><td>fixado com "níveis de atuação"</td><td>Insane, Azzero</td></tr>
+    <tr><td>mês 4</td><td>copiar a Tono demais (palavra vermelha, manuscrito amarelo)</td><td>alguém comenta "parece a Tono"</td><td>risco novo</td></tr>
+    <tr><td>mês 5</td><td>fase 2 sem roteiro: você aparece "falando de tudo"</td><td>vídeo gravado sem gancho na primeira frase</td><td>Insane (rotina, YouTube)</td></tr>
+    <tr><td>mês 6</td><td>cansar. duas semanas sem postar e o feed esfria</td><td>"semana que vem eu volto"</td><td>todo mundo, uma vez</td></tr>
+  </table>
+  <div class="q">
+    <div class="hand">seja honesta: qual desses você acha que a GF tem mais chance de cometer?</div>
+    <select id="erro">
+      <option value="">escolha</option>
+      <option>voltar a ser vitrine</option><option>sumir com a dor de aparecer</option><option>reel longo demais</option><option>nicho fora da grade</option><option>virar agência</option><option>copiar a Tono</option><option>fase 2 sem roteiro</option><option>cansar</option>
+    </select>
+    <div class="feed" id="ferro"></div>
+  </div>
+</section>
+
+<!-- 5. ERROS MAIS COMETIDOS -->
+<section class="page" data-n="6">
+  <div class="kicker">5</div>
+  <h2>Os erros mais cometidos (jogo: quem foi?)</h2>
+  <p>Cada frase abaixo é um erro real que apareceu na análise. Diga quem cometeu. Não é pra decorar; é pra você reconhecer o erro quando ele aparecer no seu feed.</p>
+  <div class="q" id="jogo">
+    <div class="hand">1. Legenda de 8 parágrafos com "entende?", "sabe?", "saca?" no fim de cada um</div>
+    <div class="three"><button class="opt j" data-j="1" data-v="tono">Tono</button><button class="opt j" data-j="1" data-v="insane">Insane</button><button class="opt j" data-j="1" data-v="azzero">Azzero</button></div>
+    <div class="feed" id="fj1"></div>
+    <div class="hand" style="margin-top:14px">2. "VAGAS LIMITADAS! Comenta POCKET" no único fixado do perfil</div>
+    <div class="three"><button class="opt j" data-j="2" data-v="tono">Tono</button><button class="opt j" data-j="2" data-v="insane">Insane</button><button class="opt j" data-j="2" data-v="azzero">Azzero</button></div>
+    <div class="feed" id="fj2"></div>
+    <div class="hand" style="margin-top:14px">3. Vídeo horizontal publicado girado, com "gire o celular"</div>
+    <div class="three"><button class="opt j" data-j="3" data-v="tono">Tono</button><button class="opt j" data-j="3" data-v="insane">Insane</button><button class="opt j" data-j="3" data-v="azzero">Azzero</button></div>
+    <div class="feed" id="fj3"></div>
+    <div class="hand" style="margin-top:14px">4. Case de pet shop, lash, doceria e escola de idiomas no mesmo mês, sem tese na capa</div>
+    <div class="three"><button class="opt j" data-j="4" data-v="tono">Tono</button><button class="opt j" data-j="4" data-v="insane">Insane</button><button class="opt j" data-j="4" data-v="azzero">Azzero</button></div>
+    <div class="feed" id="fj4"></div>
+    <div class="hand" style="margin-top:14px">5. Vídeo de ano novo 100% feito por IA no perfil de uma produtora que vende captação real</div>
+    <div class="three"><button class="opt j" data-j="5" data-v="tono">Tono</button><button class="opt j" data-j="5" data-v="insane">Insane</button><button class="opt j" data-j="5" data-v="azzero">Azzero</button></div>
+    <div class="feed" id="fj5"></div>
+    <div style="margin-top:14px"><span class="score" id="score">0</span> <span class="hand">/ 5</span></div>
+  </div>
+  <h3>e os erros que o mercado inteiro comete</h3>
+  <p>Postar todo dia sem função. Hashtag em bloco. "Bom dia" e data comemorativa. Antes e depois. Legenda que começa com "nós". Trend com áudio em alta. Responder direct dois dias depois. Nenhum deles está no seu brief. Mantenha assim.</p>
+</section>
+
+<!-- 6. FURAR A BOLHA -->
+<section class="page" data-n="7">
+  <div class="kicker">6</div>
+  <h2>Onde a GF tem grande chance de furar a bolha</h2>
+  <p>Seis apostas. Cada uma cruza algo que a GF tem com algo que ninguém está fazendo. Escolha as três que você toparia começar este mês.</p>
+  <ul class="check" id="apostas">
+    <li><label><input type="checkbox"> <span><b>A voz do empresário de Cascavel.</b> "eu travo na frente da câmera", "não tenho tempo pra isso", "meu Instagram me dá vergonha". Entre aspas, primeira tela, toda semana. Ninguém fala com esse dono nessa língua.</span></label></li>
+    <li><label><input type="checkbox"> <span><b>A série com nome.</b> "se sua [hamburgueria] fosse nossa cliente": a cada 15 dias um negócio genérico, o que a GF gravaria, com o acervo ilustrando. O público pede o próximo. É o "Tono Resolve" com a sua cara.</span></label></li>
+    <li><label><input type="checkbox"> <span><b>O bastidor que é o negócio do cliente.</b> A cozinha do Dom Guilherme funcionando enquanto o texto ensina. Estúdio nenhum concorre com isso.</span></label></li>
+    <li><label><input type="checkbox"> <span><b>O post do nome.</b> Um carrossel "por que GF Môve" (o sol no Ô, sempre em movimento) e um reel curto. Fecha a fase GF Films de vez e dá assunto por uma semana.</span></label></li>
+    <li><label><input type="checkbox"> <span><b>Contraste honesto com o próprio acervo.</b> O mesmo prato, dois cortes. O mesmo imóvel, dois jeitos. É o formato mais enviado das três referências e você tem material pra fazer sem gravar.</span></label></li>
+    <li><label><input type="checkbox"> <span><b>Você, na fase 2, com um tema por vídeo.</b> "perfil que dá vergonha", "timidez pra gravar", "o que eu faria na sua loja". Já gravando pra você mesma, é só mudar o assunto e manter o esqueleto de 5 partes.</span></label></li>
+  </ul>
+  <div class="bar"><i id="bap"></i></div>
+  <div class="feed" id="fap"></div>
+  <div class="fig">
+    <svg viewBox="0 0 640 170" xmlns="http://www.w3.org/2000/svg">
+      <g filter="url(#sk)" fill="none" stroke="#2b2622" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="200" cy="90" r="60" stroke-opacity=".5"/>
+        <path d="M250 60l90-30" stroke="#e8622a" stroke-width="3"/><path d="M330 22l12 8-10 10" stroke="#e8622a" stroke-width="3"/>
+        <circle cx="420" cy="40" r="6" fill="#e8622a" stroke="none"/><circle cx="470" cy="70" r="6" fill="#e8622a" stroke="none"/><circle cx="450" cy="120" r="6" fill="#e8622a" stroke="none"/><circle cx="520" cy="100" r="6" fill="#e8622a" stroke="none"/>
+      </g>
+      <g font-family="Caveat" font-size="19" fill="#2b2622"><text x="150" y="96">quem já te segue</text><text x="400" y="160" fill="#e8622a">quem recebe o post de alguém</text></g>
+    </svg>
+  </div>
+</section>
+
+<!-- 7. JOGO: PRIMEIRA SEMANA -->
+<section class="page" data-n="8">
+  <div class="kicker">7</div>
+  <h2>Monte sua primeira semana</h2>
+  <p>Três posts, um pilar cada, só com o acervo. Escolha o formato e o material. No fim eu te digo se a semana conversa ou só enfeita.</p>
+  <div class="q">
+    <div class="slot"><b>post 1</b><select class="sem" id="s1"><option value="">pilar dor de aparecer: formato</option><option value="aspas">fala entre aspas + bastidor Yellow</option><option value="pov">pov: a gf chegou pra gravar</option><option value="compilado">compilado de cases bonitos</option></select></div>
+    <div class="slot"><b>post 2</b><select class="sem" id="s2"><option value="">pilar direção: formato</option><option value="contraste">contraste prato parado × prato chegando (Dom Guilherme)</option><option value="dicas">carrossel "5 dicas pra gravar melhor"</option><option value="frase">frase de efeito sobre foto</option></select></div>
+    <div class="slot"><b>post 3</b><select class="sem" id="s3"><option value="">pilar prova/bastidor: formato</option><option value="meio">meio a meio gravando / no feed (Yellow)</option><option value="entregue">"projeto realizado para @yellow"</option><option value="odonto">o vídeo da odonto inteiro</option></select></div>
+    <button class="btn o" id="avaliar">avaliar minha semana</button>
+    <div class="reveal" id="rsem"></div>
+  </div>
+  <h3>a regra que resolve 80% das dúvidas</h3>
+  <blockquote>Se o post começa na cabeça do empresário (uma frase que ele diria, uma dúvida que ele tem, uma cena que ele vive), pode postar. Se começa na cabeça da GF ("olha o que a gente fez"), guarda pro destaque Projetos.</blockquote>
+</section>
+
+<!-- 8. MAPA -->
+<section class="page" data-n="9">
+  <div class="kicker">8</div>
+  <h2>Seu mapa, Gislaine</h2>
+  <p>Tudo que você respondeu aqui, junto. Copie pro seu caderno, mande pra Juliana, ou imprima e cole na parede.</p>
+  <button class="btn o" id="gerar">montar meu mapa</button>
+  <button class="btn g" id="limpar">apagar e começar de novo</button>
+  <div class="mapa" id="mapa">clique em "montar meu mapa"</div>
+  <h3>o que eu faria na sua pele, nesta ordem</h3>
+  <ol>
+    <li>Bio em três linhas: "produtora de vídeo em Cascavel · a gente grava no seu negócio · você não precisa aparecer".</li>
+    <li>Os três primeiros posts que já sugeri: "eu travo na frente da câmera" (Yellow), "prato bonito × prato que vende" (Dom Guilherme), "pov: a gf chegou pra gravar sua hamburgueria" (Yellow, meio a meio).</li>
+    <li>O carrossel "como a gente trabalha" como fixado 2, e o post do nome novo na segunda semana.</li>
+    <li>Responder todo comentário e direct no mesmo dia por 30 dias. Sem exceção.</li>
+    <li>Só depois disso, você na tela. Um tema por vídeo, 30 a 45 segundos, o esqueleto de 5 partes.</li>
+  </ol>
+  <p class="note">se em 30 dias um dono de negócio mandar um post da GF pra outro dono de negócio, a bolha furou.</p>
+  <details class="src"><summary>de onde veio</summary>
+    Brief da Gislaine (set/2026). Análise post a post de @tono.filmes, @insanefilmesprodutora e @azzero____ (tono-FICHAS, insane-FICHAS, azzero-FICHAS, SINTESE-3-PERFIS). Memória do projeto GF MÔVE (cases, motores, rebrand, oferta do 1º mês). Estudo "Entrar na rede sem virar paisagem" (mesma pasta), com as fontes de Mosseri/Instagram 2026, Sprout Social 2026, Sebrae, Sheridan, Miller, Godin, Hormozi, Berger, Kelly, Vaynerchuk e Kane.
+  </details>
+</section>
+
+</div>
+<script>
+(function(){
+  const K='gislaine-gf-v1';const st=JSON.parse(localStorage.getItem(K)||'{}');const save=()=>localStorage.setItem(K,JSON.stringify(st));const $=s=>document.querySelector(s);
+  document.querySelectorAll('input[type=text],textarea,select').forEach(el=>{if(st[el.id]!==undefined)el.value=st[el.id];el.addEventListener('input',()=>{st[el.id]=el.value;save();react(el)});react(el)});
+  // checklist apostas
+  const ap=[...document.querySelectorAll('#apostas input')];ap.forEach((b,i)=>{b.checked=!!(st.ap&&st.ap[i]);b.addEventListener('change',()=>{st.ap=ap.map(x=>x.checked);save();apf()})});apf();
+  function apf(){const n=ap.filter(b=>b.checked).length;$('#bap').style.width=(100*n/6)+'%';$('#fap').textContent=n===0?'':n<3?'escolha mais '+(3-n)+'. três é o número que dá pra sustentar.':n===3?'três apostas. é exatamente o que cabe num mês.':'mais de três vira lista de desejos. corte até três.'}
+  // opts q0,q3
+  const fb={q0:{orgulho:'ótimo. então o trabalho é dar direção ao que já é bom.',meio:'é o estado mais comum. o brief resolve a metade que falta.',vergonha:'melhor combustível que existe. a Azzero fez um perfil inteiro em cima disso.'},
+            q3:{a:'é o que as três dizem. e é por isso que não diferencia.',b:'essa é a única frase que nenhuma das três pode dizer. é a sua.',c:'isso é agência. o brief da GF fecha essa porta, e faz bem.'}};
+  document.querySelectorAll('.opt[data-q]').forEach(o=>{const q=o.dataset.q,v=o.dataset.v;if(st[q]===v)mark(o);o.addEventListener('click',()=>{st[q]=v;save();document.querySelectorAll('.opt[data-q='+q+']').forEach(x=>x.classList.remove('ok','no','sel'));mark(o)})});
+  function mark(o){const q=o.dataset.q,v=o.dataset.v;const good=(q==='q3'&&v==='b');o.classList.add(q==='q0'?'sel':(good?'ok':'no'));$('#f'+q).textContent=fb[q][v]}
+  // jogo
+  const ans={1:'insane',2:'azzero',3:'insane',4:'tono',5:'azzero'};
+  const why={1:'Insane. Legenda longa com "entende?" como muleta de proximidade.',2:'Azzero. O único fixado é uma promoção (AZZERO POCKET).',3:'Insane (e a Azzero nos eventos). Só quem já conhece vira o celular.',4:'Tono. A grade mistura nicho porque cada case vira post sem tese.',5:'Azzero. Reel de ano novo "criado totalmente por IA".'};
+  st.j=st.j||{};
+  document.querySelectorAll('.opt.j').forEach(o=>{const j=o.dataset.j,v=o.dataset.v;if(st.j[j]===v)jm(o);o.addEventListener('click',()=>{st.j[j]=v;save();document.querySelectorAll('.opt.j[data-j="'+j+'"]').forEach(x=>x.classList.remove('ok','no'));jm(o)})});
+  function jm(o){const j=o.dataset.j,v=o.dataset.v;o.classList.add(ans[j]===v?'ok':'no');$('#fj'+j).textContent=(ans[j]===v?'isso. ':'não. ')+why[j];sc()}
+  function sc(){let n=0;for(const j in ans)if(st.j[j]===ans[j])n++;$('#score').textContent=n}
+  sc();
+  // reactions
+  function react(el){const v=el.value;
+    if(el.classList.contains('ord')){const a=[$('#o1').value,$('#o2').value,$('#o3').value];if(a[0]&&a[1]&&a[2]){const u=new Set(a);$('#ford').textContent=u.size<3?'repetiu uma. cada posição é uma coisa diferente.':(a[0]==='parar de ser vitrine'?'vitrine em primeiro: é o que eu também colocaria. resolve as outras três de tabela.':a[0]==='chegar na fase 2 sem susto'?'fase 2 em primeiro: cuidado, ela depende da fase 1 estar rodando.':'boa ordem. lembra que "vitrine" é o sintoma das outras.')}}
+    if(el.id==='erro'){$('#ferro').textContent={'voltar a ser vitrine':'é o mais comum e o mais silencioso. a defesa: tese na capa ou não posta.','sumir com a dor de aparecer':'a defesa: um post fixo por semana com fala entre aspas. sem pular.','reel longo demais':'a defesa: roteiro de 5 linhas. passou, corta.','nicho fora da grade':'a defesa: destaque Projetos existe pra isso.','virar agência':'a defesa: o brief já diz "produtora, não agência". releia quando tentar.','copiar a Tono':'a defesa: laranja, minúscula, assinatura. o sistema é seu.','fase 2 sem roteiro':'a defesa: um tema por vídeo, gancho na primeira frase.','cansar':'a defesa: 3 por semana, não 7. e o acervo já gravado.'}[v]||''}
+  }
+  // avaliar semana
+  $('#avaliar').addEventListener('click',()=>{const a=$('#s1').value,b=$('#s2').value,c=$('#s3').value;if(!a||!b||!c){$('#rsem').textContent='escolha os três.';$('#rsem').classList.add('on');return}
+    let pts=0,t=[];
+    if(a==='aspas'||a==='pov'){pts++;t.push('post 1 começa na cabeça do cliente.')}else t.push('post 1: compilado bonito é vitrine. troque por fala entre aspas.');
+    if(b==='contraste'){pts++;t.push('post 2: contraste com material real é o formato mais enviado.')}else if(b==='dicas')t.push('post 2: carrossel de dicas é o que todo mundo faz. o contraste ensina mais em 30 s.');else t.push('post 2: frase de efeito não tem prova. sem prova, não convence.');
+    if(c==='meio'){pts++;t.push('post 3: meio a meio mostra processo e resultado juntos. é a prova com contexto.')}else if(c==='entregue')t.push('post 3: "projeto realizado" sem tese é o erro nº 1 das três referências.');else t.push('post 3: o brief diz que o vídeo da odonto não é bom como case. só o backstage, como slide.');
+    $('#rsem').innerHTML='<b>'+pts+'/3</b> · '+t.join(' ')+(pts===3?' <br><b>Essa semana conversa.</b>':'');$('#rsem').classList.add('on');st.sem=[a,b,c];save()});
+  $('#gerar').addEventListener('click',()=>{const g=id=>(st[id]||'').toString().trim()||'…';const aps=ap.map((b,i)=>b.checked?['a voz do empresário','a série com nome','o bastidor no cliente','o post do nome','contraste com o acervo','você na fase 2'][i]:null).filter(Boolean).join(', ')||'…';
+    $('#mapa').textContent=`hoje o feed me dá: ${g('q0')}
+o que mais me tira o sono: 1º ${g('o1')} · 2º ${g('o2')} · 3º ${g('o3')}
+a razão que eu não tinha visto: ${g('razao')}
+a frase que só a GF pode dizer: "a gente grava dentro do seu negócio, e você não precisa aparecer"
+o erro que eu mais corro risco: ${g('erro')}
+minhas 3 apostas: ${aps}
+minha primeira semana: ${(st.sem||[]).join(' · ')||'…'}
+regra: se começa na cabeça do empresário, posta. se começa na GF, vai pro destaque.`});
+  $('#limpar').addEventListener('click',()=>{if(confirm('apagar suas respostas?')){localStorage.removeItem(K);location.reload()}});
+  window.addEventListener('scroll',()=>{const h=document.body.scrollHeight-innerHeight;$('#prog').style.width=(100*scrollY/h)+'%'});
+})();
+</script>
+</body>
+</html>
