@@ -319,7 +319,7 @@ let done={}; try{done=JSON.parse(localStorage.getItem("giscrm")||"{}")}catch(e){
 let added=[]; try{added=JSON.parse(localStorage.getItem("giscrm_added")||"[]")}catch(e){added=[]}
 let waMode=localStorage.getItem("giscrm_wamode")||"web";
 let waPrefill=(localStorage.getItem("giscrm_waprefill")==="0")?false:true;
-let waTmpl=localStorage.getItem("giscrm_watmpl")||"Opa {nome}, tudo bem? Aqui é a Gislaine, da GF Môve (produtora de audiovisual). Posso te roubar 1 minutinho?";
+let waTmpl=localStorage.getItem("giscrm_watmpl")||"Opa {nome}, tudo bem? Aqui é a {eu}, da GF Môve, produtora de audiovisual.\n\nTô propondo pra alguns donos daqui marcarmos um dia de gravação agora na pré-temporada, que rende conteúdo pra rodar o verão inteiro.\n\nMe tira uma dúvida: vocês já fizeram alguma produção pra essa temporada?";
 const isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||window.matchMedia("(max-width:680px)").matches;
 let sel=new Set();
 let editingId=null, editInativo=false;
@@ -344,8 +344,8 @@ function waHref(r){
   let base = isMobile ? `https://wa.me/${r.wa}` : (waMode==="app" ? `whatsapp://send?phone=${r.wa}` : waMode==="web" ? `https://web.whatsapp.com/send?phone=${r.wa}` : `https://wa.me/${r.wa}`);
   if(waPrefill && waTmpl.trim()){
     const nome = r.person ? firstName(r.person) : "";
-    let txt = waTmpl.replace(/{nome}/g,nome).replace(/{cidade}/g,r.city||"");
-    txt = txt.replace(/\s+,/g,",").replace(/\s{2,}/g," ").trim();
+    let txt = waTmpl.replace(/{nome}/g,nome).replace(/{cidade}/g,r.city||"").replace(/{eu}/g,r.resp||"Gislaine");
+    txt = txt.replace(/\s+,/g,",").replace(/[ \t]{2,}/g," ").trim();
     base += (base.indexOf("?")>=0?"&":"?")+"text="+encodeURIComponent(txt);
   }
   return base;
@@ -636,7 +636,7 @@ document.querySelectorAll("th[data-k]").forEach(th=>th.addEventListener("click",
 // ---- disparo sequencial ----
 let queue=[], qi=0;
 function updateFire(){document.getElementById("fireBtn").textContent=`🚀 Disparar (${sel.size})`;}
-function dispMsg(r){let nome=r.person?firstName(r.person):"";let t=waTmpl.replace(/{nome}/g,nome).replace(/{cidade}/g,r.city||"");return t.replace(/\s+,/g,",").replace(/\s{2,}/g," ").trim();}
+function dispMsg(r){let nome=r.person?firstName(r.person):"";let t=waTmpl.replace(/{nome}/g,nome).replace(/{cidade}/g,r.city||"").replace(/{eu}/g,r.resp||"Gislaine");return t.replace(/\s+,/g,",").replace(/[ \t]{2,}/g," ").trim();}
 function showFire(){
   const r=queue[qi];
   document.getElementById("fmProg").textContent=`${qi+1} de ${queue.length}`;
