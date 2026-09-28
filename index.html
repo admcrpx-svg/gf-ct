@@ -400,6 +400,33 @@ const SEED={"done":{"g:recantopedras":1,"v:tropilhagrillsaojose":1,"v:oilustriss
   localStorage.setItem("giscrm_seeded","1");
 }catch(e){}})();
 let done={}; try{done=JSON.parse(localStorage.getItem("giscrm")||"{}")}catch(e){done={}}
+/* v18: nicho e cidade com uma grafia só — evita chip repetido na rota */
+function _nn(s){return (""+(s||"")).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim();}
+const NICHE_MAP={
+  "gastronomia":"Restaurante","restaurante":"Restaurante","pizzaria":"Restaurante","pizza":"Restaurante",
+  "restaurante e pizzaria":"Restaurante","frutos do mar":"Restaurante","parrilla":"Restaurante",
+  "cafeteria/brunch":"Cafeteria/Brunch","cafeteria":"Cafeteria/Brunch","confeitaria":"Cafeteria/Brunch",
+  "moveis planejados":"Móveis Planejados",
+  "imobiliaria":"Imobiliária","imobiliario":"Imobiliária","imoveis":"Imobiliária",
+  "cirurgia plastica":"Cirurgia plástica","cirurgia plastica e harmonizacao facial":"Cirurgia plástica",
+  "rinoplastia":"Cirurgia plástica","rinoplastia e cirurgia facial":"Cirurgia plástica",
+  "harmonizacao orofacial":"Harmonização facial","harmonizacao facial":"Harmonização facial",
+  "estetica e harmonizacao":"Harmonização facial"
+};
+const CITY_MAP={"florianopolis":"Florianópolis","floripa":"Florianópolis","sao jose":"São José",
+  "balneario camboriu":"Balneário Camboriú","palhoca":"Palhoça","biguacu":"Biguaçu"};
+const NICHE_CANON={};
+function canonNiche(n){
+  n=(""+(n||"")).trim(); if(!n)return "";
+  const k=_nn(n);
+  if(NICHE_MAP[k])return NICHE_MAP[k];
+  if(!NICHE_CANON[k]||(/^[A-ZÀ-Ý]/.test(n)&&!/^[A-ZÀ-Ý]/.test(NICHE_CANON[k])))NICHE_CANON[k]=n;
+  return NICHE_CANON[k];
+}
+function canonCity(c){
+  c=(""+(c||"")).replace(/\s*[-,]\s*SC\s*$/i,"").trim();
+  const k=_nn(c); return CITY_MAP[k]||c;
+}
 let added=[]; try{added=JSON.parse(localStorage.getItem("giscrm_added")||"[]")}catch(e){added=[]}
 /* v17: recalcula rk/busca no load — o seed guarda rk congelado e datas DD/MM/AAAA ficavam sem ranking */
 DATA.forEach(enrich); added.forEach(enrich);
@@ -438,7 +465,8 @@ function diasAte(v){let iso=ddmmToIso(v);if(!iso)return null;
   if(d<-200&&!/^\d{4}-/.test((""+v).trim())){alvo=new Date(p[0]+1,p[1]-1,p[2]);d=Math.round((alvo-hoje)/86400000);}
   return d;}
 function retKey(s){const iso=ddmmToIso(s);if(!iso)return 99999;const p=iso.split("-").map(Number);return Math.floor(Date.UTC(p[0],p[1]-1,p[2])/86400000);}
-function enrich(r){r.city=(""+(r.city||"")).replace(/\s*[-,]\s*SC\s*$/i,"").trim();r.ig=r.handle?("https://instagram.com/"+r.handle):"";r.wa_disp=waDisp(r.wa);r.rk=retKey(r.date_return);r.s=[r.client,r.person,r.handle,r.city,r.niche,r.bairro,r.endereco,r.status,r.resp,r.canal,r.conversa].join(" ").toLowerCase();return r;}
+
+function enrich(r){r.city=canonCity(r.city);r.niche=canonNiche(r.niche);r.ig=r.handle?("https://instagram.com/"+r.handle):"";r.wa_disp=waDisp(r.wa);r.rk=retKey(r.date_return);r.s=[r.client,r.person,r.handle,r.city,r.niche,r.bairro,r.endereco,r.status,r.resp,r.canal,r.conversa].join(" ").toLowerCase();return r;}
 const BASE_KEYS=["client","person","handle","wa","city","endereco","bairro","niche","status","resp","value","date_last","date_return","canal","conversa"];
 function ALL(){return DATA.concat(added).filter(r=>removed.indexOf(r.id)<0).map(r=>{const o=overrides[r.id];if(!o)return r;const m=Object.assign({},r,o);if(BASE_KEYS.some(k=>k in o))enrich(m);else m.rk=retKey(m.date_return);return m;});}
 function firstName(s){s=(""+(s||"")).trim();return s?s.split(/\s+/)[0]:"";}
