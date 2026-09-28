@@ -440,6 +440,8 @@ let overrides={}; try{overrides=JSON.parse(localStorage.getItem("giscrm_over")||
 let removed=[]; try{removed=JSON.parse(localStorage.getItem("giscrm_removed")||"[]")}catch(e){removed=[]}
 function saveRemoved(){localStorage.setItem("giscrm_removed",JSON.stringify(removed));}
 let lastRoute=null; try{lastRoute=JSON.parse(localStorage.getItem("giscrm_lastroute")||"null")}catch(e){lastRoute=null}
+/* v19: rota de mais de 7 dias nao e "ultima rota" — some o chip em vez de ficar filtrando rota velha */
+if(lastRoute&&(!lastRoute.ts||(Date.now()-lastRoute.ts)>7*86400000)){lastRoute=null;try{localStorage.removeItem("giscrm_lastroute");}catch(e){}}
 let fResp="Todos", fStat="Todos", fCanal="Todos", fEtapa="", fHide=false, fAlerta=false, fRota=false, fInativo=false, fLixeira=false, sortK="ret", q="";
 function LIXO(){return DATA.concat(added).filter(r=>removed.indexOf(r.id)>=0).map(r=>{const o=overrides[r.id];return o?Object.assign({},r,o):r;});}
 const statOrder={Hot:0,Negotiating:1,Novo:2,Freeze:3,Cold:4,"—":5};
@@ -872,7 +874,7 @@ document.getElementById("loadState").addEventListener("change",e=>{
       if(st.overrides){overrides=st.overrides;localStorage.setItem("giscrm_over",JSON.stringify(overrides));}
       if(st.added){added=st.added;localStorage.setItem("giscrm_added",JSON.stringify(added));}
       if(st.removed){removed=st.removed;localStorage.setItem("giscrm_removed",JSON.stringify(removed));}
-      if(st.lastRoute){lastRoute=st.lastRoute;localStorage.setItem("giscrm_lastroute",JSON.stringify(lastRoute));}
+      if(st.lastRoute&&st.lastRoute.ts&&(Date.now()-st.lastRoute.ts)<=7*86400000){lastRoute=st.lastRoute;localStorage.setItem("giscrm_lastroute",JSON.stringify(lastRoute));}else{lastRoute=null;try{localStorage.removeItem("giscrm_lastroute");}catch(e){}}
       buildChips();view();updateFire();
       const m=document.getElementById("stateMsg");m.textContent="✓ progresso carregado";setTimeout(()=>m.textContent="",3500);
     }catch(err){alert("Arquivo de progresso inválido. Escolha o CT-GISLAINE-progresso.json que você salvou.");}
