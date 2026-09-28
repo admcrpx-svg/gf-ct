@@ -98,6 +98,10 @@ a.wa{color:#7fe0a0}
 .st.Freeze{background:#1b2f45;color:#8fbfe6}
 .st.x{background:#22252b;color:var(--mut)}
 .rsp{font-size:11.5px;padding:2px 8px;border-radius:6px}
+.can{font-size:11px;padding:2px 7px;border-radius:999px;border:1px solid var(--bd);white-space:nowrap;display:inline-block}
+.can.Rota{background:rgba(255,176,106,.16);border-color:#ffb06a}
+.can.WhatsApp{background:rgba(77,211,155,.14);border-color:#4dd39b}
+.can.Instagram{background:rgba(214,119,255,.14);border-color:#c77dff}
 .rsp.Juliana{background:#2a2233;color:#c9a6ff} .rsp.Gislaine{background:#3a2a12;color:var(--sun2)}
 .mut{color:var(--mut)} .ret.late{color:#ff9d8a;font-weight:600}
 .mine{font-size:10px;color:var(--sun2);border:1px solid var(--line);border-radius:5px;padding:0 4px;margin-left:6px;cursor:pointer}
@@ -214,6 +218,8 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
     <div class="chips" id="respChips"></div>
     <span class="mut" style="margin:0 4px">·</span>
     <div class="chips" id="statChips"></div>
+    <span class="mut" style="margin:0 4px">·</span>
+    <div class="chips" id="canalChips"></div>
     <span class="chip" id="rotaChip" hidden>🗺️ Última rota</span>
     <span class="chip" id="inativoChip" hidden>⏸️ Inativos</span>
     <span class="chip" id="lixoChip" hidden>🗑️ Lixeira</span>
@@ -232,6 +238,7 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
     <label><span>Bairro</span><input id="f_bairro" placeholder="Kobrasol" autocomplete="off"></label>
     <label><span>Nicho <small class="mut">— escolhe ou digita um novo</small></span><input id="f_niche" list="nicheList" placeholder="Pizzaria, Barbearia, Restaurante..." autocomplete="off"><datalist id="nicheList"></datalist></label>
     <label><span>Responsável</span><select id="f_resp"><option>Gislaine</option><option>Juliana</option><option value="">—</option></select></label>
+    <label><span>Captado por <small class="mut">— só pra saber a origem</small></span><select id="f_canal"><option value="">—</option><option value="Rota">🗺️ Rota</option><option value="WhatsApp">📲 WhatsApp</option><option value="Instagram">📷 Instagram</option></select></label>
     <label><span>Status</span><select id="f_status"><option value="Novo">Novo</option><option value="Hot">Hot</option><option value="Negotiating">Negociando</option><option value="Cold">Cold</option><option value="Freeze">Freeze</option></select></label>
     <label><span>Último contato</span><input id="f_last" type="date" autocomplete="off"></label>
     <label><span>Retorno</span><input id="f_ret" type="date" autocomplete="off"></label>
@@ -375,7 +382,7 @@ let overrides={}; try{overrides=JSON.parse(localStorage.getItem("giscrm_over")||
 let removed=[]; try{removed=JSON.parse(localStorage.getItem("giscrm_removed")||"[]")}catch(e){removed=[]}
 function saveRemoved(){localStorage.setItem("giscrm_removed",JSON.stringify(removed));}
 let lastRoute=null; try{lastRoute=JSON.parse(localStorage.getItem("giscrm_lastroute")||"null")}catch(e){lastRoute=null}
-let fResp="Todos", fStat="Todos", fHide=false, fAlerta=false, fRota=false, fInativo=false, fLixeira=false, sortK="ret", q="";
+let fResp="Todos", fStat="Todos", fCanal="Todos", fHide=false, fAlerta=false, fRota=false, fInativo=false, fLixeira=false, sortK="ret", q="";
 function LIXO(){return DATA.concat(added).filter(r=>removed.indexOf(r.id)>=0).map(r=>{const o=overrides[r.id];return o?Object.assign({},r,o):r;});}
 const statOrder={Hot:0,Negotiating:1,Novo:2,Freeze:3,Cold:4,"—":5};
 const TODAY=new Date(); const todayKey=Math.floor(Date.UTC(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate())/86400000);
@@ -397,8 +404,8 @@ function diasAte(v){let iso=ddmmToIso(v);if(!iso)return null;
   if(d<-200&&!/^\d{4}-/.test((""+v).trim())){alvo=new Date(p[0]+1,p[1]-1,p[2]);d=Math.round((alvo-hoje)/86400000);}
   return d;}
 function retKey(s){const iso=ddmmToIso(s);if(!iso)return 99999;const p=iso.split("-").map(Number);return Math.floor(Date.UTC(p[0],p[1]-1,p[2])/86400000);}
-function enrich(r){r.ig=r.handle?("https://instagram.com/"+r.handle):"";r.wa_disp=waDisp(r.wa);r.rk=retKey(r.date_return);r.s=[r.client,r.person,r.handle,r.city,r.niche,r.bairro,r.endereco,r.status,r.resp].join(" ").toLowerCase();return r;}
-const BASE_KEYS=["client","person","handle","wa","city","endereco","bairro","niche","status","resp","value","date_last","date_return"];
+function enrich(r){r.ig=r.handle?("https://instagram.com/"+r.handle):"";r.wa_disp=waDisp(r.wa);r.rk=retKey(r.date_return);r.s=[r.client,r.person,r.handle,r.city,r.niche,r.bairro,r.endereco,r.status,r.resp,r.canal].join(" ").toLowerCase();return r;}
+const BASE_KEYS=["client","person","handle","wa","city","endereco","bairro","niche","status","resp","value","date_last","date_return","canal"];
 function ALL(){return DATA.concat(added).filter(r=>removed.indexOf(r.id)<0).map(r=>{const o=overrides[r.id];if(!o)return r;const m=Object.assign({},r,o);if(BASE_KEYS.some(k=>k in o))enrich(m);else m.rk=retKey(m.date_return);return m;});}
 function firstName(s){s=(""+(s||"")).trim();return s?s.split(/\s+/)[0]:"";}
 function waHref(r){
@@ -423,6 +430,10 @@ function buildChips(){
   const rc=counts("resp");
   document.getElementById("respChips").innerHTML=
     ['Todos','Gislaine','Juliana'].map(v=>`<span class="chip" data-t="resp" data-v="${v}">${v}${v!=='Todos'?' '+(rc[v]||0):''}</span>`).join('');
+  const cnc={};ALL().forEach(r=>{if(r.canal)cnc[r.canal]=(cnc[r.canal]||0)+1;});
+  const cIco={Rota:"🗺️",WhatsApp:"📲",Instagram:"📷"};
+  document.getElementById("canalChips").innerHTML=
+    ['Todos','Rota','WhatsApp','Instagram'].map(v=>`<span class="chip" data-t="canal" data-v="${v}">${v==='Todos'?'Origem: todas':cIco[v]+' '+v+' '+(cnc[v]||0)}</span>`).join('');
   const sc=counts("status");
   const order=['Todos','Novo','Hot','Negotiating','Cold','Freeze'];
   document.getElementById("statChips").innerHTML=
@@ -450,7 +461,7 @@ document.getElementById("lixoChip").addEventListener("click",()=>{fLixeira=!fLix
 function syncChips(){
   document.querySelectorAll('.chip').forEach(c=>{
     if(!c.dataset.t)return;
-    const on=(c.dataset.t==='resp'&&c.dataset.v===fResp)||(c.dataset.t==='stat'&&c.dataset.v===fStat);
+    const on=(c.dataset.t==='resp'&&c.dataset.v===fResp)||(c.dataset.t==='stat'&&c.dataset.v===fStat)||(c.dataset.t==='canal'&&c.dataset.v===fCanal);
     c.classList.toggle('on',on);
   });
 }
@@ -463,6 +474,7 @@ function currentRows(){
   let rows=ALL().filter(r=>{
     if(fResp!=="Todos"&&r.resp!==fResp)return false;
     if(fStat!=="Todos"&&r.status!==fStat)return false;
+    if(fCanal!=="Todos"&&(r.canal||"")!==fCanal)return false;
     if(fAlerta&&!r.alerta)return false;
     if(fHide&&done[r.id])return false;
     if(fInativo&&!r.inativo)return false;
@@ -491,6 +503,8 @@ function view(){
     const late=(r.rk<99999&&r.rk<todayKey&&r.status!=="Novo")?" late":"";
     const ret=r.date_return?`<span class="ret${late}">${esc(r.date_return)}</span>`:'<span class="mut">—</span>';
     const rsp=r.resp?`<span class="rsp ${r.resp}">${r.resp}</span>`:'<span class="mut">—</span>';
+    const CIC={Rota:"🗺️",WhatsApp:"📲",Instagram:"📷"};
+    const canT=r.canal?`<span class="can ${esc(r.canal)}" title="Origem da captação">${CIC[r.canal]||""} ${esc(r.canal)}</span>`:'';
     const flag=r.alerta?`<span class="flag" data-flag="${r.id}" title="Clique pra tirar o alerta">⚑ ${esc(r.alerta)}</span>`:'';
     const psub=[r.person,r.niche,r.bairro].filter(Boolean).join(" · ");const person=psub?`<small class="mut">${esc(psub)}</small>`:'';
     const inaT=r.inativo?`<span class="inatag" data-inativo="${esc(r.id)}" title="Reativar (voltar pras rotas)">⏸️ inativo</span>`:'';
@@ -501,7 +515,7 @@ function view(){
       <td class="nm">${esc(r.client)}${inaT}${flag}${person}${obsH}</td>
       <td data-label="Instagram">${ig}</td><td data-label="WhatsApp">${wa}</td>
       <td class="mut" data-label="Cidade">${esc(r.city)||'—'}</td>
-      <td data-label="Dono">${rsp}</td>
+      <td data-label="Dono">${rsp}${canT?" "+canT:""}</td>
       <td data-label="Status"><span class="st ${stc}">${stTxt}</span></td>
       <td class="mut" data-label="Últ. contato">${esc(r.date_last)||'—'}</td>
       <td data-label="Retorno">${ret}</td>
@@ -517,7 +531,7 @@ function view(){
 function saveAdded(){localStorage.setItem("giscrm_added",JSON.stringify(added));}
 function resetForm(){
   ["f_nome","f_person","f_ig","f_wa","f_city","f_end","f_bairro","f_last","f_ret","f_val","f_obs"].forEach(id=>document.getElementById(id).value="");
-  document.getElementById("f_status").value="Novo";document.getElementById("f_niche").value="";document.getElementById("f_resp").value="Gislaine";
+  document.getElementById("f_status").value="Novo";document.getElementById("f_canal").value="";document.getElementById("f_niche").value="";document.getElementById("f_resp").value="Gislaine";
   editInativo=false;syncAtivoBtn();
   document.getElementById("addTitle").textContent="Novo contato";
   document.getElementById("saveContact").textContent="Salvar contato";
@@ -538,6 +552,7 @@ function openEdit(id){
   s("f_city",r.city);s("f_end",r.endereco);s("f_bairro",r.bairro);s("f_niche",r.niche);
   document.getElementById("f_resp").value=(r.resp==="Gislaine"||r.resp==="Juliana")?r.resp:"";
   document.getElementById("f_status").value=["Novo","Hot","Negotiating","Cold","Freeze"].includes(r.status)?r.status:"Novo";
+  document.getElementById("f_canal").value=["Rota","WhatsApp","Instagram"].includes(r.canal)?r.canal:"";
   document.getElementById("f_last").value=ddmmToIso(r.date_last);document.getElementById("f_ret").value=ddmmToIso(r.date_return);s("f_val",(r.value&&r.value!=="R$0,00"&&r.value!=="R$0.00")?r.value:"");s("f_obs",r.obs);
   syncAtivoBtn();
   document.getElementById("addTitle").textContent="Editar: "+r.client;
@@ -552,7 +567,7 @@ function salvarEdicao(nome,handle,wa){
   let val=g("f_val");if(!val)val="R$0,00";
   const upd={client:nome,person:g("f_person"),handle:handle,wa:wa,phone:wa?wa.replace(/^55/,''):"",
     city:g("f_city"),endereco:g("f_end"),bairro:g("f_bairro"),niche:g("f_niche"),
-    resp:g("f_resp"),status:g("f_status"),date_last:gD("f_last"),date_return:gD("f_ret"),value:val,
+    resp:g("f_resp"),status:g("f_status"),canal:g("f_canal"),date_last:gD("f_last"),date_return:gD("f_ret"),value:val,
     obs:g("f_obs"),inativo:editInativo};
   overrides[eid]=Object.assign({},overrides[eid]||{},upd);
   localStorage.setItem("giscrm_over",JSON.stringify(overrides));
@@ -599,7 +614,7 @@ document.getElementById("saveContact").addEventListener("click",()=>{
   let val=g("f_val"); if(!val)val="R$0,00";
   const rec=enrich({
     client:nome, person:g("f_person"), handle:handle, phone:wa.replace(/^55/,''), wa:wa,
-    city:g("f_city"), resp:g("f_resp"), status:g("f_status"),
+    city:g("f_city"), resp:g("f_resp"), status:g("f_status"), canal:g("f_canal"),
     date_last:isoToDDMM(g("f_last")), date_return:isoToDDMM(g("f_ret")), value:val,
     niche:g("f_niche"), endereco:g("f_end"), bairro:g("f_bairro"), cep:"", lat:null, lon:null,
     obs:g("f_obs"), inativo:editInativo,
@@ -666,9 +681,9 @@ function editObs(id){
 }
 document.getElementById("csvBtn").addEventListener("click",()=>{
   const q=s=>'"'+(""+(s||"")).replace(/"/g,'""')+'"';
-  const head=["Nome","Instagram","WhatsApp","Cidade","Endereco","Bairro","Nicho","Observacao","Responsavel","Status","Ultimo_contato","Retorno","Valor"];
+  const head=["Nome","Instagram","WhatsApp","Cidade","Endereco","Bairro","Nicho","Observacao","Responsavel","Captado_por","Status","Ultimo_contato","Retorno","Valor"];
   const lines=[head.join(",")];
-  ALL().forEach(r=>lines.push([r.client,r.ig,r.wa_disp,r.city,r.endereco,r.bairro,r.niche,r.obs,r.resp,r.status,r.date_last,r.date_return,r.value].map(q).join(",")));
+  ALL().forEach(r=>lines.push([r.client,r.ig,r.wa_disp,r.city,r.endereco,r.bairro,r.niche,r.obs,r.resp,r.canal,r.status,r.date_last,r.date_return,r.value].map(q).join(",")));
   const blob=new Blob(["﻿"+lines.join("\n")],{type:"text/csv;charset=utf-8"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="CT-GISLAINE-export.csv";a.click();
 });
@@ -686,7 +701,7 @@ document.getElementById("tb").addEventListener("change",e=>{
 });
 document.addEventListener("click",e=>{
   const c=e.target.closest(".chip"); if(!c||!c.dataset.t)return;
-  if(c.dataset.t==="resp")fResp=c.dataset.v; else fStat=c.dataset.v;
+  if(c.dataset.t==="resp")fResp=c.dataset.v; else if(c.dataset.t==="canal")fCanal=c.dataset.v; else fStat=c.dataset.v;
   syncChips(); view();
 });
 document.getElementById("q").addEventListener("input",e=>{q=e.target.value.toLowerCase().trim();view()});
@@ -892,7 +907,7 @@ function agendarRetornoRota(){
   const now=new Date(), fut=new Date(now.getTime()+days*86400000);
   const f=fmtBR;
   const hoje=f(now), ret=f(fut);
-  visit.forEach(r=>{overrides[r.id]=Object.assign({},overrides[r.id]||{},{date_last:hoje,date_return:ret});});
+  visit.forEach(r=>{const ex={date_last:hoje,date_return:ret};if(!r.canal)ex.canal="Rota";overrides[r.id]=Object.assign({},overrides[r.id]||{},ex);});
   localStorage.setItem("giscrm_over",JSON.stringify(overrides));
   buildChips(); view();
   const m=document.getElementById("r_msg"); if(m){m.textContent=`✓ ${visit.length} agendado(s) pra voltar dia ${ret} — aparecem em "retorno mais próximo"`; setTimeout(()=>m.textContent="",5000);}
@@ -1159,7 +1174,7 @@ function agRender(){
   let html="",ultima="";
   rows.forEach(r=>{
     if(!agSitF&&r._sit!==ultima){ultima=r._sit;const lbl=AG_SITS.find(x=>x[0]===r._sit);html+=`<div class="agsep">${lbl?lbl[1]:""}</div>`;}
-    const sub=[r.bairro,r.niche].filter(Boolean).join(" · ");
+    const sub=[r.bairro,r.niche,r.canal?({Rota:"🗺️ rota",WhatsApp:"📲 whats",Instagram:"📷 insta"}[r.canal]||r.canal):""].filter(Boolean).join(" · ");
     const aberta=agOpen===r.id;
     html+=`<div class="agrow${aberta?' open':''}" data-ag="${esc(r.id)}">
       <span class="agdot ${r._sit}"></span>
@@ -1172,7 +1187,7 @@ function agRender(){
       const wa=r.wa?`<a class="wa" href="${waHref(r)}" target="_blank" rel="noopener">📲 ${r.wa_disp}</a>`:'<span class="mut">sem WhatsApp</span>';
       const ig=r.handle?`<a class="ig" href="${esc(r.ig)}" target="_blank" rel="noopener">@${esc(r.handle)}</a>`:'';
       html+=`<div class="agdet">
-        <div class="l"><span>${agPrazo(r)}</span>${r.person?`<span>Pessoa: <b>${esc(r.person)}</b></span>`:''}<span>Dono: <b>${esc(r.resp||'—')}</b></span><span>Status: <b>${esc(r.status||'—')}</b></span>${r.city?`<span>${esc([r.endereco,r.bairro,r.city].filter(Boolean).join(' · '))}</span>`:''}</div>
+        <div class="l"><span>${agPrazo(r)}</span>${r.person?`<span>Pessoa: <b>${esc(r.person)}</b></span>`:''}<span>Dono: <b>${esc(r.resp||'—')}</b></span><span>Captado por: <b>${esc(r.canal||'—')}</b></span><span>Status: <b>${esc(r.status||'—')}</b></span>${r.city?`<span>${esc([r.endereco,r.bairro,r.city].filter(Boolean).join(' · '))}</span>`:''}</div>
         ${r.obs?`<div class="l"><span>📝 ${esc(r.obs)}</span></div>`:''}
         <div class="formbtns">${wa} ${ig} <button class="agedit" data-agedit="${esc(r.id)}">✏️ Abrir ficha / mudar datas</button></div>
       </div>`;
