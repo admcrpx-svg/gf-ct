@@ -145,6 +145,38 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
   #fmMsg{font-size:16px}
 }
 @media print{.bar,#addPanel,#rotaPanel,#setPanel{display:none}body{background:#fff;color:#000}a{color:#000}th{top:0}}
+
+/* --- v17: agenda de datas + dono na rota --- */
+#agPanel .agtools{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:10px}
+#ag_q{min-width:220px}
+.agrow{display:grid;grid-template-columns:14px 1fr auto auto auto;gap:10px;align-items:center;padding:9px 10px;border:1px solid var(--bd);border-radius:10px;margin-bottom:6px;cursor:pointer;background:var(--card)}
+.agrow:hover{border-color:var(--sun1)}
+.agrow.open{border-color:var(--sun1)}
+.agdot{width:10px;height:10px;border-radius:50%;background:#7b8797}
+.agdot.atrasado{background:#ff5b5b}.agdot.hoje{background:#ff8a3d}.agdot.semana{background:#ffc94d}
+.agdot.futuro{background:#4dd39b}.agdot.achamar{background:#7b8797}
+.agnome{min-width:0}
+.agnome b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.agnome small{color:var(--mut)}
+.agd,.agr{font-variant-numeric:tabular-nums;font-size:13px;color:var(--mut);white-space:nowrap}
+.agr b{color:var(--tx)}
+.agtag{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--bd);white-space:nowrap}
+.agtag.atrasado{background:rgba(255,91,91,.15);border-color:#ff5b5b}
+.agtag.hoje{background:rgba(255,138,61,.18);border-color:#ff8a3d}
+.agtag.semana{background:rgba(255,201,77,.16);border-color:#ffc94d}
+.agtag.futuro{background:rgba(77,211,155,.14);border-color:#4dd39b}
+.agtag.achamar{background:rgba(123,135,151,.14)}
+.agdet{border:1px solid var(--bd);border-top:0;border-radius:0 0 10px 10px;padding:10px 12px;margin:-8px 0 8px;background:rgba(255,255,255,.02)}
+.agdet .l{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--mut);margin-bottom:8px}
+.agdet .l b{color:var(--tx);font-weight:600}
+.agsep{margin:14px 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+@media(max-width:620px){
+  .agrow{grid-template-columns:12px 1fr auto;row-gap:2px;padding:8px 10px}
+  .agd{grid-column:2;grid-row:2}
+  .agr{grid-column:3;grid-row:2;text-align:right}
+  .agtag{grid-column:3;grid-row:1}
+  .agdet .formbtns{gap:8px}
+}
 </style></head><body><div class="wrap">
 <h1>GF <b>MÔVE</b> — CT <b>Gislaine</b></h1>
 <div class="sub">CT da Gislaine (Floripa e São José). Adiciona o contato com endereço e nicho, marca quem já foi, e a <b>🗺️ Rota do dia</b> monta a lista dos mais próximos pra jogar no Routerra.</div>
@@ -159,6 +191,7 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
     </select>
     <button id="addBtn" class="pri">➕ Adicionar contato</button>
     <button id="rotaBtn" class="pri">🗺️ Rota do dia</button>
+    <button id="agBtn" class="pri">📅 Agenda</button>
     <button id="fireBtn">🚀 Disparar (0)</button>
     <button id="selVis">☑️ Selecionar visíveis</button>
     <button id="selRet">📅 Selecionar 20 p/ retorno</button>
@@ -200,8 +233,8 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
     <label><span>Nicho <small class="mut">— escolhe ou digita um novo</small></span><input id="f_niche" list="nicheList" placeholder="Pizzaria, Barbearia, Restaurante..." autocomplete="off"><datalist id="nicheList"></datalist></label>
     <label><span>Responsável</span><select id="f_resp"><option>Gislaine</option><option>Juliana</option><option value="">—</option></select></label>
     <label><span>Status</span><select id="f_status"><option value="Novo">Novo</option><option value="Hot">Hot</option><option value="Negotiating">Negociando</option><option value="Cold">Cold</option><option value="Freeze">Freeze</option></select></label>
-    <label><span>Último contato</span><input id="f_last" placeholder="DD.MM" autocomplete="off"></label>
-    <label><span>Retorno</span><input id="f_ret" placeholder="DD.MM" autocomplete="off"></label>
+    <label><span>Último contato</span><input id="f_last" type="date" autocomplete="off"></label>
+    <label><span>Retorno</span><input id="f_ret" type="date" autocomplete="off"></label>
     <label><span>Valor negociando</span><input id="f_val" placeholder="R$0,00 (vazio = zero)" autocomplete="off"></label>
     <label style="grid-column:1/-1"><span>Observação</span><input id="f_obs" placeholder="ex: já tem videomaker, voltar em setembro, falar com a dona..." autocomplete="off"></label>
   </div>
@@ -222,6 +255,7 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
 <div id="rotaPanel" hidden>
   <h3>🗺️ Rota do dia</h3>
   <div class="rfilters">
+    <div><span class="rflabel">De quem <small class="mut">— a rota sai só dos contatos dessa pessoa</small></span><div class="rchips" id="r_resp"></div></div>
     <div><span class="rflabel">Nicho <small class="mut">— toca em quantos quiser</small></span><div class="rchips" id="r_niches"></div></div>
     <div><span class="rflabel">Região <small class="mut">— cidade ou bairro, pode marcar vários</small></span><div class="rchips" id="r_areas"></div></div>
     <div><span class="rflabel">Paradas <small class="mut">(Routerra aceita 20)</small></span><input id="r_n" type="number" min="1" max="20" value="10"></div>
@@ -235,6 +269,18 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
   </div>
   <label class="hint" style="display:flex;align-items:center;gap:6px;margin-top:10px"><input type="checkbox" id="r_skip" checked style="accent-color:var(--sun1)"> pular quem já tem ✓ (contatado)</label>
   <div id="r_out"></div>
+</div>
+<div id="agPanel" hidden>
+  <h3>📅 Agenda de contatos</h3>
+  <div class="hint" style="margin-bottom:10px">Lista enxuta por data: quem está atrasado aparece primeiro. Toca no contato pra abrir o resto da ficha.</div>
+  <div class="agtools">
+    <div><span class="rflabel">Situação</span><div class="rchips" id="ag_sit"></div></div>
+    <div><span class="rflabel">De quem</span><div class="rchips" id="ag_resp"></div></div>
+    <div><label class="rflabel" for="ag_q">Buscar</label><input id="ag_q" placeholder="nome, nicho, bairro..." autocomplete="off"></div>
+  </div>
+  <label class="hint" style="display:flex;align-items:center;gap:6px;margin-bottom:10px"><input type="checkbox" id="ag_ina" style="accent-color:var(--sun1)"> mostrar também os ⏸️ fora das rotas</label>
+  <div id="ag_out"></div>
+  <div class="formbtns"><button id="ag_close">Fechar</button></div>
 </div>
 <div id="histPanel" hidden>
   <h3>🕘 Histórico de segurança</h3>
@@ -317,6 +363,8 @@ const SEED={"done":{"g:recantopedras":1,"v:tropilhagrillsaojose":1,"v:oilustriss
 }catch(e){}})();
 let done={}; try{done=JSON.parse(localStorage.getItem("giscrm")||"{}")}catch(e){done={}}
 let added=[]; try{added=JSON.parse(localStorage.getItem("giscrm_added")||"[]")}catch(e){added=[]}
+/* v17: recalcula rk/busca no load — o seed guarda rk congelado e datas DD/MM/AAAA ficavam sem ranking */
+DATA.forEach(enrich); added.forEach(enrich);
 let waMode=localStorage.getItem("giscrm_wamode")||"web";
 let waPrefill=(localStorage.getItem("giscrm_waprefill")==="0")?false:true;
 let waTmpl=localStorage.getItem("giscrm_watmpl")||"Opa {nome}, tudo bem? Aqui é a {eu}, da GF Môve, produtora de audiovisual.\n\nTô propondo pra alguns donos daqui marcarmos um dia de gravação agora na pré-temporada, que rende conteúdo pra rodar o verão inteiro.\n\nMe tira uma dúvida: vocês já fizeram alguma produção pra essa temporada?";
@@ -330,12 +378,25 @@ let lastRoute=null; try{lastRoute=JSON.parse(localStorage.getItem("giscrm_lastro
 let fResp="Todos", fStat="Todos", fHide=false, fAlerta=false, fRota=false, fInativo=false, fLixeira=false, sortK="ret", q="";
 function LIXO(){return DATA.concat(added).filter(r=>removed.indexOf(r.id)>=0).map(r=>{const o=overrides[r.id];return o?Object.assign({},r,o):r;});}
 const statOrder={Hot:0,Negotiating:1,Novo:2,Freeze:3,Cold:4,"—":5};
-const TODAY=new Date(); const todayKey=(TODAY.getMonth()+1)*31+TODAY.getDate();
+const TODAY=new Date(); const todayKey=Math.floor(Date.UTC(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate())/86400000);
 
 function normHandle(s){if(!s)return"";s=(""+s).trim().toLowerCase();if(!s||s==="-")return"";s=s.replace(/https?:\/\//,"").replace("www.","");if(s.indexOf("instagram.com/")>=0)s=s.split("instagram.com/")[1];s=s.replace(/^@/,"");s=s.split(/[\/?# ]/)[0].trim();return s;}
 function waFull(s){let d=(""+(s||"")).replace(/\D/g,"");if(!d)return"";if(d.length>11&&d.startsWith("55"))d=d.slice(2);if(!d.startsWith("55"))d="55"+d;return d;}
 function waDisp(full){if(!full)return"";let x=full.startsWith("55")?full.slice(2):full;let ddd=x.slice(0,2),rest=x.slice(2);if(rest.length===9)return`(${ddd}) ${rest.slice(0,5)}-${rest.slice(5)}`;if(rest.length===8)return`(${ddd}) ${rest.slice(0,4)}-${rest.slice(4)}`;return`(${ddd}) ${rest}`;}
-function retKey(s){const m=(""+(s||"")).match(/^(\d{1,2})\.(\d{1,2})/);if(!m)return 99999;return (+m[2])*31+(+m[1]);}
+function ddmmToIso(v){v=(""+(v||"")).trim();if(!v)return "";
+  if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;
+  const m=v.match(/^(\d{1,2})[.\/](\d{1,2})(?:[.\/](\d{2,4}))?$/);if(!m)return "";
+  let y=m[3]?(m[3].length===2?("20"+m[3]):m[3]):String(new Date().getFullYear());
+  return y+"-"+String(+m[2]).padStart(2,"0")+"-"+String(+m[1]).padStart(2,"0");}
+function isoToDDMM(v){const m=(""+(v||"")).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?(m[3]+"/"+m[2]+"/"+m[1]):(""+(v||"")).trim();}
+function fmtBR(d){return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();}
+function diasAte(v){let iso=ddmmToIso(v);if(!iso)return null;
+  const a=new Date();const hoje=new Date(a.getFullYear(),a.getMonth(),a.getDate());
+  const p=iso.split("-").map(Number);let alvo=new Date(p[0],p[1]-1,p[2]);
+  let d=Math.round((alvo-hoje)/86400000);
+  if(d<-200&&!/^\d{4}-/.test((""+v).trim())){alvo=new Date(p[0]+1,p[1]-1,p[2]);d=Math.round((alvo-hoje)/86400000);}
+  return d;}
+function retKey(s){const iso=ddmmToIso(s);if(!iso)return 99999;const p=iso.split("-").map(Number);return Math.floor(Date.UTC(p[0],p[1]-1,p[2])/86400000);}
 function enrich(r){r.ig=r.handle?("https://instagram.com/"+r.handle):"";r.wa_disp=waDisp(r.wa);r.rk=retKey(r.date_return);r.s=[r.client,r.person,r.handle,r.city,r.niche,r.bairro,r.endereco,r.status,r.resp].join(" ").toLowerCase();return r;}
 const BASE_KEYS=["client","person","handle","wa","city","endereco","bairro","niche","status","resp","value","date_last","date_return"];
 function ALL(){return DATA.concat(added).filter(r=>removed.indexOf(r.id)<0).map(r=>{const o=overrides[r.id];if(!o)return r;const m=Object.assign({},r,o);if(BASE_KEYS.some(k=>k in o))enrich(m);else m.rk=retKey(m.date_return);return m;});}
@@ -450,6 +511,7 @@ function view(){
   }).join('');
   document.getElementById("count").textContent=`${rows.length} de ${ALL().length} contatos`;
   document.getElementById("alertaBtn").textContent="⚑ Alertas ("+ALL().filter(r=>r.alerta).length+")";
+  if(typeof agRender==="function")agRender();
 }
 // ---- add / delete ----
 function saveAdded(){localStorage.setItem("giscrm_added",JSON.stringify(added));}
@@ -467,7 +529,7 @@ document.querySelectorAll(".mot").forEach(b=>b.addEventListener("click",()=>{
   const o=document.getElementById("f_obs"),m=b.dataset.m;
   if(!o.value.trim())o.value=m;else if(o.value.toLowerCase().indexOf(m.toLowerCase())<0)o.value=o.value.trim()+" - "+m;
 }));
-function refreshRotaSel(){const p=document.getElementById("rotaPanel");if(p&&!p.hidden)fillRotaSel();}
+function refreshRotaSel(){const p=document.getElementById("rotaPanel");if(p&&!p.hidden)fillRotaSel();if(typeof agRender==="function")agRender();}
 function openEdit(id){
   const r=ALL().find(x=>x.id===id);if(!r)return;
   editingId=id;editInativo=!!r.inativo;
@@ -476,7 +538,7 @@ function openEdit(id){
   s("f_city",r.city);s("f_end",r.endereco);s("f_bairro",r.bairro);s("f_niche",r.niche);
   document.getElementById("f_resp").value=(r.resp==="Gislaine"||r.resp==="Juliana")?r.resp:"";
   document.getElementById("f_status").value=["Novo","Hot","Negotiating","Cold","Freeze"].includes(r.status)?r.status:"Novo";
-  s("f_last",r.date_last);s("f_ret",r.date_return);s("f_val",(r.value&&r.value!=="R$0,00"&&r.value!=="R$0.00")?r.value:"");s("f_obs",r.obs);
+  document.getElementById("f_last").value=ddmmToIso(r.date_last);document.getElementById("f_ret").value=ddmmToIso(r.date_return);s("f_val",(r.value&&r.value!=="R$0,00"&&r.value!=="R$0.00")?r.value:"");s("f_obs",r.obs);
   syncAtivoBtn();
   document.getElementById("addTitle").textContent="Editar: "+r.client;
   document.getElementById("saveContact").textContent="Salvar alterações";
@@ -485,11 +547,12 @@ function openEdit(id){
 }
 function salvarEdicao(nome,handle,wa){
   const g=id=>document.getElementById(id).value.trim();
+  const gD=id=>isoToDDMM(document.getElementById(id).value.trim());
   const eid=editingId;const antes=ALL().find(x=>x.id===eid);if(!antes){editingId=null;return;}
   let val=g("f_val");if(!val)val="R$0,00";
   const upd={client:nome,person:g("f_person"),handle:handle,wa:wa,phone:wa?wa.replace(/^55/,''):"",
     city:g("f_city"),endereco:g("f_end"),bairro:g("f_bairro"),niche:g("f_niche"),
-    resp:g("f_resp"),status:g("f_status"),date_last:g("f_last"),date_return:g("f_ret"),value:val,
+    resp:g("f_resp"),status:g("f_status"),date_last:gD("f_last"),date_return:gD("f_ret"),value:val,
     obs:g("f_obs"),inativo:editInativo};
   overrides[eid]=Object.assign({},overrides[eid]||{},upd);
   localStorage.setItem("giscrm_over",JSON.stringify(overrides));
@@ -537,7 +600,7 @@ document.getElementById("saveContact").addEventListener("click",()=>{
   const rec=enrich({
     client:nome, person:g("f_person"), handle:handle, phone:wa.replace(/^55/,''), wa:wa,
     city:g("f_city"), resp:g("f_resp"), status:g("f_status"),
-    date_last:g("f_last"), date_return:g("f_ret"), value:val,
+    date_last:isoToDDMM(g("f_last")), date_return:isoToDDMM(g("f_ret")), value:val,
     niche:g("f_niche"), endereco:g("f_end"), bairro:g("f_bairro"), cep:"", lat:null, lon:null,
     obs:g("f_obs"), inativo:editInativo,
     source:"Manual", id:"u:"+Date.now()+"."+Math.floor(Math.random()*100000)
@@ -696,7 +759,7 @@ document.getElementById("retBtn").addEventListener("click",()=>{
   const days=parseInt(prompt(`Você marcou ${ids.length} contato(s) como já falados (✓). Voltar a falar com eles em quantos dias?`,"20"),10);
   if(!days||days<1)return;
   const now=new Date(), fut=new Date(now.getTime()+days*86400000);
-  const f=d=>String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0");
+  const f=fmtBR;
   const hoje=f(now), ret=f(fut);
   ids.forEach(id=>{overrides[id]=Object.assign({},overrides[id]||{},{date_last:hoje,date_return:ret});});
   localStorage.setItem("giscrm_over",JSON.stringify(overrides));
@@ -733,7 +796,7 @@ function hav(a,b){const d=x=>x*Math.PI/180;const h=Math.sin(d(b.lat-a.lat)/2)**2
 const IS_IOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
 const IS_APPCEL=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 let rStart=null, rotaAtual=[];
-let selNiche=new Set(), selArea=new Set();
+let selNiche=new Set(), selArea=new Set(), selResp="";
 let rotaSkip=new Set(), rotaPin=new Set();
 const _rnorm=s=>(""+(s||"")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 const OBS_BLOQ=["ja tem producao","ja tem produtora","ja tem agencia","nao vou captar"];
@@ -743,13 +806,19 @@ function rotaCands(incluiTirados){
   const skip=document.getElementById("r_skip").checked;
   const nis=[...selNiche], ars=[...selArea];
   return ALL().filter(rotavel)
+    .filter(r=>!selResp||r.resp===selResp)
     .filter(r=>incluiTirados||!rotaSkip.has(r.id))
     .filter(r=>!nis.length||nis.includes(r.niche))
     .filter(r=>!ars.length||ars.some(a=>{const i=a.indexOf("::"),t=a.slice(0,i),v=a.slice(i+2);return t==="c"?(r.city===v):((r.bairro||"")===v);}))
     .filter(r=>!(skip&&done[r.id]));
 }
 function fillRotaSel(){
-  const base=ALL().filter(rotavel);
+  const todos=ALL().filter(rotavel);
+  const rc={};todos.forEach(r=>{const k=r.resp||"—";rc[k]=(rc[k]||0)+1});
+  document.getElementById("r_resp").innerHTML=
+    `<span class="rchip${selResp?'':' on'}" data-r="">Todos (${todos.length})</span>`+
+    ["Gislaine","Juliana"].map(n=>`<span class="rchip${selResp===n?' on':''}" data-r="${n}">${n} (${rc[n]||0})</span>`).join('');
+  const base=selResp?todos.filter(r=>r.resp===selResp):todos;
   const nc={};base.forEach(r=>{if(r.niche)nc[r.niche]=(nc[r.niche]||0)+1});
   document.getElementById("r_niches").innerHTML=
     `<span class="rchip${selNiche.size?'':' on'}" data-n="">Todos</span>`+
@@ -760,6 +829,7 @@ function fillRotaSel(){
   Object.keys(bc).sort().forEach(b=>h+=`<span class="rchip${selArea.has("b::"+b)?' on':''}" data-a="b::${esc(b)}">${esc(b)} (${bc[b]})</span>`);
   document.getElementById("r_areas").innerHTML=h;
 }
+document.getElementById("r_resp").addEventListener("click",e=>{const c=e.target.closest(".rchip");if(!c)return;const v=c.dataset.r||"";if(v===selResp)return;selResp=v;selNiche.clear();selArea.clear();fillRotaSel();document.getElementById("r_msg").textContent=selResp?("rota só dos contatos de "+selResp):"rota de todos os contatos";});
 document.getElementById("r_niches").addEventListener("click",e=>{const c=e.target.closest(".rchip");if(!c)return;const n=c.dataset.n;if(n==="")selNiche.clear();else{selNiche.has(n)?selNiche.delete(n):selNiche.add(n);}fillRotaSel();});
 document.getElementById("r_areas").addEventListener("click",e=>{const c=e.target.closest(".rchip");if(!c)return;const a=c.dataset.a;if(a==="")selArea.clear();else{selArea.has(a)?selArea.delete(a):selArea.add(a);}fillRotaSel();});
 function centroid(list){let la=0,lo=0;list.forEach(r=>{la+=r.lat;lo+=r.lon});return{lat:la/list.length,lon:lo/list.length};}
@@ -820,7 +890,7 @@ function agendarRetornoRota(){
   const days=parseInt(prompt(`Você marcou ${visit.length} lugar(es) como visitado(s) ✓. Voltar a falar com eles em quantos dias?`,"20"),10);
   if(!days||days<1)return;
   const now=new Date(), fut=new Date(now.getTime()+days*86400000);
-  const f=d=>String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0");
+  const f=fmtBR;
   const hoje=f(now), ret=f(fut);
   visit.forEach(r=>{overrides[r.id]=Object.assign({},overrides[r.id]||{},{date_last:hoje,date_return:ret});});
   localStorage.setItem("giscrm_over",JSON.stringify(overrides));
@@ -1034,4 +1104,96 @@ function fillNicheList(){
 }
 fillNicheList(); updateUndo();
 buildChips(); view(); updateFire();
+
+/* ===== v17: Agenda de contatos (controle de chamada e retorno) ===== */
+let agSitF="", agRespF="", agQ="", agOpen=null;
+const AG_SITS=[["atrasado","🔴 Atrasado"],["hoje","🟠 Hoje"],["semana","🟡 Esta semana"],["futuro","🟢 Mais pra frente"],["achamar","⚪ Sem retorno"]];
+function agSituacao(r){
+  const d=diasAte(r.date_return);
+  if(d===null)return "achamar";
+  if(d<0)return "atrasado";
+  if(d===0)return "hoje";
+  if(d<=7)return "semana";
+  return "futuro";
+}
+function agRows(){
+  const mostraIna=document.getElementById("ag_ina").checked;
+  let rows=ALL().filter(r=>mostraIna||!r.inativo);
+  if(agRespF)rows=rows.filter(r=>r.resp===agRespF);
+  if(agQ){const q=agQ.toLowerCase();rows=rows.filter(r=>((r.s||"")+" "+(r.obs||"")).toLowerCase().indexOf(q)>=0);}
+  rows.forEach(r=>{r._sit=agSituacao(r);r._dd=diasAte(r.date_return);});
+  const ord={atrasado:0,hoje:1,semana:2,futuro:3,achamar:4};
+  rows.sort((a,b)=>{
+    if(ord[a._sit]!==ord[b._sit])return ord[a._sit]-ord[b._sit];
+    if(a._sit==="achamar")return (a.client||"").localeCompare(b.client||"");
+    return a._dd-b._dd;
+  });
+  return rows;
+}
+function agPrazo(r){
+  if(r._dd===null)return r.date_last?"nunca foi agendado":"nunca contatado";
+  if(r._dd<0)return Math.abs(r._dd)+(Math.abs(r._dd)===1?" dia atrasado":" dias atrasado");
+  if(r._dd===0)return "é hoje";
+  if(r._dd===1)return "amanhã";
+  return "em "+r._dd+" dias";
+}
+function agRender(){
+  const p=document.getElementById("agPanel");if(!p||p.hidden)return;
+  const mostraIna=document.getElementById("ag_ina").checked;
+  let uni=ALL().filter(r=>mostraIna||!r.inativo);
+  if(agRespF)uni=uni.filter(r=>r.resp===agRespF);
+  const cs={};uni.forEach(r=>{const k=agSituacao(r);cs[k]=(cs[k]||0)+1;});
+  document.getElementById("ag_sit").innerHTML=
+    `<span class="rchip${agSitF?'':' on'}" data-s="">Todos (${uni.length})</span>`+
+    AG_SITS.map(x=>`<span class="rchip${agSitF===x[0]?' on':''}" data-s="${x[0]}">${x[1]} (${cs[x[0]]||0})</span>`).join('');
+  const base=ALL().filter(r=>mostraIna||!r.inativo);
+  const rc={};base.forEach(r=>{if(r.resp)rc[r.resp]=(rc[r.resp]||0)+1;});
+  document.getElementById("ag_resp").innerHTML=
+    `<span class="rchip${agRespF?'':' on'}" data-r="">Todos</span>`+
+    ["Gislaine","Juliana"].map(n=>`<span class="rchip${agRespF===n?' on':''}" data-r="${n}">${n} (${rc[n]||0})</span>`).join('');
+  let rows=agRows();
+  if(agSitF)rows=rows.filter(r=>r._sit===agSitF);
+  const out=document.getElementById("ag_out");
+  if(!rows.length){out.innerHTML='<div class="hint">Nenhum contato nesse filtro.</div>';return;}
+  const tagTxt={atrasado:"Atrasado",hoje:"Hoje",semana:"Esta semana",futuro:"Agendado",achamar:"A chamar"};
+  let html="",ultima="";
+  rows.forEach(r=>{
+    if(!agSitF&&r._sit!==ultima){ultima=r._sit;const lbl=AG_SITS.find(x=>x[0]===r._sit);html+=`<div class="agsep">${lbl?lbl[1]:""}</div>`;}
+    const sub=[r.bairro,r.niche].filter(Boolean).join(" · ");
+    const aberta=agOpen===r.id;
+    html+=`<div class="agrow${aberta?' open':''}" data-ag="${esc(r.id)}">
+      <span class="agdot ${r._sit}"></span>
+      <span class="agnome"><b>${r.inativo?'⏸️ ':''}${esc(r.client)}</b>${sub?`<small>${esc(sub)}</small>`:''}</span>
+      <span class="agd">últ. ${r.date_last?esc(r.date_last):'—'}</span>
+      <span class="agr">ret. ${r.date_return?`<b>${esc(r.date_return)}</b>`:'—'}</span>
+      <span class="agtag ${r._sit}">${tagTxt[r._sit]}</span>
+    </div>`;
+    if(aberta){
+      const wa=r.wa?`<a class="wa" href="${waHref(r)}" target="_blank" rel="noopener">📲 ${r.wa_disp}</a>`:'<span class="mut">sem WhatsApp</span>';
+      const ig=r.handle?`<a class="ig" href="${esc(r.ig)}" target="_blank" rel="noopener">@${esc(r.handle)}</a>`:'';
+      html+=`<div class="agdet">
+        <div class="l"><span>${agPrazo(r)}</span>${r.person?`<span>Pessoa: <b>${esc(r.person)}</b></span>`:''}<span>Dono: <b>${esc(r.resp||'—')}</b></span><span>Status: <b>${esc(r.status||'—')}</b></span>${r.city?`<span>${esc([r.endereco,r.bairro,r.city].filter(Boolean).join(' · '))}</span>`:''}</div>
+        ${r.obs?`<div class="l"><span>📝 ${esc(r.obs)}</span></div>`:''}
+        <div class="formbtns">${wa} ${ig} <button class="agedit" data-agedit="${esc(r.id)}">✏️ Abrir ficha / mudar datas</button></div>
+      </div>`;
+    }
+  });
+  out.innerHTML=html;
+}
+document.getElementById("agBtn").addEventListener("click",()=>{
+  const p=document.getElementById("agPanel");p.hidden=!p.hidden;
+  if(!p.hidden){agRender();window.scrollTo({top:0,behavior:"smooth"});}
+});
+document.getElementById("ag_close").addEventListener("click",()=>{document.getElementById("agPanel").hidden=true;});
+document.getElementById("ag_sit").addEventListener("click",e=>{const c=e.target.closest(".rchip");if(!c)return;agSitF=c.dataset.s||"";agRender();});
+document.getElementById("ag_resp").addEventListener("click",e=>{const c=e.target.closest(".rchip");if(!c)return;agRespF=c.dataset.r||"";agRender();});
+document.getElementById("ag_ina").addEventListener("change",agRender);
+document.getElementById("ag_q").addEventListener("input",e=>{agQ=e.target.value.trim();agRender();});
+document.getElementById("ag_out").addEventListener("click",e=>{
+  const ed=e.target.closest("[data-agedit]");
+  if(ed){openEdit(ed.dataset.agedit);return;}
+  const row=e.target.closest("[data-ag]");if(!row)return;
+  if(e.target.closest("a"))return;
+  const id=row.dataset.ag;agOpen=(agOpen===id)?null:id;agRender();
+});
 </script></body></html>
