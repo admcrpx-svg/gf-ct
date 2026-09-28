@@ -102,6 +102,13 @@ a.wa{color:#7fe0a0}
 .can.Rota{background:rgba(255,176,106,.16);border-color:#ffb06a}
 .can.WhatsApp{background:rgba(77,211,155,.14);border-color:#4dd39b}
 .can.Instagram{background:rgba(214,119,255,.14);border-color:#c77dff}
+.cvt{font-size:11px;padding:2px 7px;border-radius:999px;border:1px solid var(--bd);white-space:nowrap;display:inline-block;background:rgba(255,255,255,.04)}
+.cvt.sem{border-color:#7b8797}
+.cvt.parou{border-color:#ffc94d;background:rgba(255,201,77,.12)}
+.cvt.espera{border-color:#6ab7ff;background:rgba(106,183,255,.12)}
+.cvt.nao{border-color:#ff5b5b;background:rgba(255,91,91,.12)}
+.cvt.falando{border-color:#4dd39b;background:rgba(77,211,155,.12)}
+#ag_dia{padding:7px 8px}
 .rsp.Juliana{background:#2a2233;color:#c9a6ff} .rsp.Gislaine{background:#3a2a12;color:var(--sun2)}
 .mut{color:var(--mut)} .ret.late{color:#ff9d8a;font-weight:600}
 .mine{font-size:10px;color:var(--sun2);border:1px solid var(--line);border-radius:5px;padding:0 4px;margin-left:6px;cursor:pointer}
@@ -238,12 +245,21 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
     <label><span>Bairro</span><input id="f_bairro" placeholder="Kobrasol" autocomplete="off"></label>
     <label><span>Nicho <small class="mut">— escolhe ou digita um novo</small></span><input id="f_niche" list="nicheList" placeholder="Pizzaria, Barbearia, Restaurante..." autocomplete="off"><datalist id="nicheList"></datalist></label>
     <label><span>Responsável</span><select id="f_resp"><option>Gislaine</option><option>Juliana</option><option value="">—</option></select></label>
+    <label><span>Como está a conversa</span><select id="f_conversa"><option value="">—</option><option value="Conversando">💬 Conversando</option><option value="Não respondeu">📭 Mandei e não respondeu</option><option value="Parou de responder">🔇 Parou de responder</option><option value="Sem disponibilidade">⏳ Sem disponibilidade agora</option><option value="Não quer o serviço">🚫 Não quer o serviço</option></select></label>
     <label><span>Captado por <small class="mut">— só pra saber a origem</small></span><select id="f_canal"><option value="">—</option><option value="Rota">🗺️ Rota</option><option value="WhatsApp">📲 WhatsApp</option><option value="Instagram">📷 Instagram</option></select></label>
     <label><span>Status</span><select id="f_status"><option value="Novo">Novo</option><option value="Hot">Hot</option><option value="Negotiating">Negociando</option><option value="Cold">Cold</option><option value="Freeze">Freeze</option></select></label>
     <label><span>Último contato</span><input id="f_last" type="date" autocomplete="off"></label>
     <label><span>Retorno</span><input id="f_ret" type="date" autocomplete="off"></label>
     <label><span>Valor negociando</span><input id="f_val" placeholder="R$0,00 (vazio = zero)" autocomplete="off"></label>
     <label style="grid-column:1/-1"><span>Observação</span><input id="f_obs" placeholder="ex: já tem videomaker, voltar em setembro, falar com a dona..." autocomplete="off"></label>
+  </div>
+  <div class="motrow">
+    <span class="hint">como está a conversa:</span>
+    <button type="button" class="rbtn cvb" data-c="Conversando">💬 Conversando</button>
+    <button type="button" class="rbtn cvb" data-c="Não respondeu">📭 Não respondeu</button>
+    <button type="button" class="rbtn cvb" data-c="Parou de responder">🔇 Parou de responder</button>
+    <button type="button" class="rbtn cvb" data-c="Sem disponibilidade">⏳ Sem disponibilidade</button>
+    <button type="button" class="rbtn cvb" data-c="Não quer o serviço">🚫 Não quer</button>
   </div>
   <div class="motrow">
     <button type="button" id="f_ativo">✅ Entra nas rotas</button>
@@ -283,6 +299,16 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
   <div class="agtools">
     <div><span class="rflabel">Situação</span><div class="rchips" id="ag_sit"></div></div>
     <div><span class="rflabel">De quem</span><div class="rchips" id="ag_resp"></div></div>
+    <div><span class="rflabel">Conversa</span><div class="rchips" id="ag_conv"></div></div>
+    <div><span class="rflabel">Dia <small class="mut">— mostra só quem tem essa data</small></span>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <input type="date" id="ag_dia">
+        <span class="rchip" id="ag_hoje">Hoje</span>
+        <span class="rchip" id="ag_limpa">Limpar</span>
+        <span class="rchip on" data-campo="ret" id="ag_cret">pelo retorno</span>
+        <span class="rchip" data-campo="last" id="ag_clast">pelo último contato</span>
+      </div>
+    </div>
     <div><label class="rflabel" for="ag_q">Buscar</label><input id="ag_q" placeholder="nome, nicho, bairro..." autocomplete="off"></div>
   </div>
   <label class="hint" style="display:flex;align-items:center;gap:6px;margin-bottom:10px"><input type="checkbox" id="ag_ina" style="accent-color:var(--sun1)"> mostrar também os ⏸️ fora das rotas</label>
@@ -390,6 +416,9 @@ const TODAY=new Date(); const todayKey=Math.floor(Date.UTC(TODAY.getFullYear(),T
 function normHandle(s){if(!s)return"";s=(""+s).trim().toLowerCase();if(!s||s==="-")return"";s=s.replace(/https?:\/\//,"").replace("www.","");if(s.indexOf("instagram.com/")>=0)s=s.split("instagram.com/")[1];s=s.replace(/^@/,"");s=s.split(/[\/?# ]/)[0].trim();return s;}
 function waFull(s){let d=(""+(s||"")).replace(/\D/g,"");if(!d)return"";if(d.length>11&&d.startsWith("55"))d=d.slice(2);if(!d.startsWith("55"))d="55"+d;return d;}
 function waDisp(full){if(!full)return"";let x=full.startsWith("55")?full.slice(2):full;let ddd=x.slice(0,2),rest=x.slice(2);if(rest.length===9)return`(${ddd}) ${rest.slice(0,5)}-${rest.slice(5)}`;if(rest.length===8)return`(${ddd}) ${rest.slice(0,4)}-${rest.slice(4)}`;return`(${ddd}) ${rest}`;}
+const CONVS=[["Conversando","💬","falando"],["Não respondeu","📭","sem"],["Parou de responder","🔇","parou"],["Sem disponibilidade","⏳","espera"],["Não quer o serviço","🚫","nao"]];
+function convIco(v){const c=CONVS.find(x=>x[0]===v);return c?c[1]:"";}
+function convCls(v){const c=CONVS.find(x=>x[0]===v);return c?c[2]:"";}
 function ddmmToIso(v){v=(""+(v||"")).trim();if(!v)return "";
   if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;
   const m=v.match(/^(\d{1,2})[.\/](\d{1,2})(?:[.\/](\d{2,4}))?$/);if(!m)return "";
@@ -404,8 +433,8 @@ function diasAte(v){let iso=ddmmToIso(v);if(!iso)return null;
   if(d<-200&&!/^\d{4}-/.test((""+v).trim())){alvo=new Date(p[0]+1,p[1]-1,p[2]);d=Math.round((alvo-hoje)/86400000);}
   return d;}
 function retKey(s){const iso=ddmmToIso(s);if(!iso)return 99999;const p=iso.split("-").map(Number);return Math.floor(Date.UTC(p[0],p[1]-1,p[2])/86400000);}
-function enrich(r){r.ig=r.handle?("https://instagram.com/"+r.handle):"";r.wa_disp=waDisp(r.wa);r.rk=retKey(r.date_return);r.s=[r.client,r.person,r.handle,r.city,r.niche,r.bairro,r.endereco,r.status,r.resp,r.canal].join(" ").toLowerCase();return r;}
-const BASE_KEYS=["client","person","handle","wa","city","endereco","bairro","niche","status","resp","value","date_last","date_return","canal"];
+function enrich(r){r.ig=r.handle?("https://instagram.com/"+r.handle):"";r.wa_disp=waDisp(r.wa);r.rk=retKey(r.date_return);r.s=[r.client,r.person,r.handle,r.city,r.niche,r.bairro,r.endereco,r.status,r.resp,r.canal,r.conversa].join(" ").toLowerCase();return r;}
+const BASE_KEYS=["client","person","handle","wa","city","endereco","bairro","niche","status","resp","value","date_last","date_return","canal","conversa"];
 function ALL(){return DATA.concat(added).filter(r=>removed.indexOf(r.id)<0).map(r=>{const o=overrides[r.id];if(!o)return r;const m=Object.assign({},r,o);if(BASE_KEYS.some(k=>k in o))enrich(m);else m.rk=retKey(m.date_return);return m;});}
 function firstName(s){s=(""+(s||"")).trim();return s?s.split(/\s+/)[0]:"";}
 function waHref(r){
@@ -505,6 +534,7 @@ function view(){
     const rsp=r.resp?`<span class="rsp ${r.resp}">${r.resp}</span>`:'<span class="mut">—</span>';
     const CIC={Rota:"🗺️",WhatsApp:"📲",Instagram:"📷"};
     const canT=r.canal?`<span class="can ${esc(r.canal)}" title="Origem da captação">${CIC[r.canal]||""} ${esc(r.canal)}</span>`:'';
+    const cvT=r.conversa?`<span class="cvt ${convCls(r.conversa)}" title="Como está a conversa">${convIco(r.conversa)} ${esc(r.conversa)}</span>`:'';
     const flag=r.alerta?`<span class="flag" data-flag="${r.id}" title="Clique pra tirar o alerta">⚑ ${esc(r.alerta)}</span>`:'';
     const psub=[r.person,r.niche,r.bairro].filter(Boolean).join(" · ");const person=psub?`<small class="mut">${esc(psub)}</small>`:'';
     const inaT=r.inativo?`<span class="inatag" data-inativo="${esc(r.id)}" title="Reativar (voltar pras rotas)">⏸️ inativo</span>`:'';
@@ -516,7 +546,7 @@ function view(){
       <td data-label="Instagram">${ig}</td><td data-label="WhatsApp">${wa}</td>
       <td class="mut" data-label="Cidade">${esc(r.city)||'—'}</td>
       <td data-label="Dono">${rsp}${canT?" "+canT:""}</td>
-      <td data-label="Status"><span class="st ${stc}">${stTxt}</span></td>
+      <td data-label="Status"><span class="st ${stc}">${stTxt}</span>${cvT?"<br>"+cvT:""}</td>
       <td class="mut" data-label="Últ. contato">${esc(r.date_last)||'—'}</td>
       <td data-label="Retorno">${ret}</td>
       <td class="mut" data-label="Valor">${r.value&&r.value!=='R$0.00'&&r.value!=='R$0,00'?esc(r.value):'—'}</td>
@@ -531,13 +561,18 @@ function view(){
 function saveAdded(){localStorage.setItem("giscrm_added",JSON.stringify(added));}
 function resetForm(){
   ["f_nome","f_person","f_ig","f_wa","f_city","f_end","f_bairro","f_last","f_ret","f_val","f_obs"].forEach(id=>document.getElementById(id).value="");
-  document.getElementById("f_status").value="Novo";document.getElementById("f_canal").value="";document.getElementById("f_niche").value="";document.getElementById("f_resp").value="Gislaine";
+  document.getElementById("f_status").value="Novo";document.getElementById("f_canal").value="";document.getElementById("f_conversa").value="";document.getElementById("f_niche").value="";document.getElementById("f_resp").value="Gislaine";
   editInativo=false;syncAtivoBtn();
   document.getElementById("addTitle").textContent="Novo contato";
   document.getElementById("saveContact").textContent="Salvar contato";
 }
 function syncAtivoBtn(){const b=document.getElementById("f_ativo");b.classList.toggle("paused",editInativo);b.textContent=editInativo?"⏸️ Fora das rotas":"✅ Entra nas rotas";}
 document.getElementById("f_ativo").addEventListener("click",()=>{editInativo=!editInativo;syncAtivoBtn();});
+document.querySelectorAll(".cvb").forEach(b=>b.addEventListener("click",()=>{
+  const sel=document.getElementById("f_conversa");
+  sel.value=(sel.value===b.dataset.c)?"":b.dataset.c;
+  document.querySelectorAll(".cvb").forEach(x=>x.classList.toggle("paused",x.dataset.c===sel.value));
+}));
 document.querySelectorAll(".mot").forEach(b=>b.addEventListener("click",()=>{
   editInativo=true;syncAtivoBtn();
   const o=document.getElementById("f_obs"),m=b.dataset.m;
@@ -553,6 +588,7 @@ function openEdit(id){
   document.getElementById("f_resp").value=(r.resp==="Gislaine"||r.resp==="Juliana")?r.resp:"";
   document.getElementById("f_status").value=["Novo","Hot","Negotiating","Cold","Freeze"].includes(r.status)?r.status:"Novo";
   document.getElementById("f_canal").value=["Rota","WhatsApp","Instagram"].includes(r.canal)?r.canal:"";
+  document.getElementById("f_conversa").value=CONVS.some(c=>c[0]===r.conversa)?r.conversa:"";
   document.getElementById("f_last").value=ddmmToIso(r.date_last);document.getElementById("f_ret").value=ddmmToIso(r.date_return);s("f_val",(r.value&&r.value!=="R$0,00"&&r.value!=="R$0.00")?r.value:"");s("f_obs",r.obs);
   syncAtivoBtn();
   document.getElementById("addTitle").textContent="Editar: "+r.client;
@@ -567,7 +603,7 @@ function salvarEdicao(nome,handle,wa){
   let val=g("f_val");if(!val)val="R$0,00";
   const upd={client:nome,person:g("f_person"),handle:handle,wa:wa,phone:wa?wa.replace(/^55/,''):"",
     city:g("f_city"),endereco:g("f_end"),bairro:g("f_bairro"),niche:g("f_niche"),
-    resp:g("f_resp"),status:g("f_status"),canal:g("f_canal"),date_last:gD("f_last"),date_return:gD("f_ret"),value:val,
+    resp:g("f_resp"),status:g("f_status"),canal:g("f_canal"),conversa:g("f_conversa"),date_last:gD("f_last"),date_return:gD("f_ret"),value:val,
     obs:g("f_obs"),inativo:editInativo};
   overrides[eid]=Object.assign({},overrides[eid]||{},upd);
   localStorage.setItem("giscrm_over",JSON.stringify(overrides));
@@ -614,7 +650,7 @@ document.getElementById("saveContact").addEventListener("click",()=>{
   let val=g("f_val"); if(!val)val="R$0,00";
   const rec=enrich({
     client:nome, person:g("f_person"), handle:handle, phone:wa.replace(/^55/,''), wa:wa,
-    city:g("f_city"), resp:g("f_resp"), status:g("f_status"), canal:g("f_canal"),
+    city:g("f_city"), resp:g("f_resp"), status:g("f_status"), canal:g("f_canal"), conversa:g("f_conversa"),
     date_last:isoToDDMM(g("f_last")), date_return:isoToDDMM(g("f_ret")), value:val,
     niche:g("f_niche"), endereco:g("f_end"), bairro:g("f_bairro"), cep:"", lat:null, lon:null,
     obs:g("f_obs"), inativo:editInativo,
@@ -681,9 +717,9 @@ function editObs(id){
 }
 document.getElementById("csvBtn").addEventListener("click",()=>{
   const q=s=>'"'+(""+(s||"")).replace(/"/g,'""')+'"';
-  const head=["Nome","Instagram","WhatsApp","Cidade","Endereco","Bairro","Nicho","Observacao","Responsavel","Captado_por","Status","Ultimo_contato","Retorno","Valor"];
+  const head=["Nome","Instagram","WhatsApp","Cidade","Endereco","Bairro","Nicho","Observacao","Responsavel","Captado_por","Conversa","Status","Ultimo_contato","Retorno","Valor"];
   const lines=[head.join(",")];
-  ALL().forEach(r=>lines.push([r.client,r.ig,r.wa_disp,r.city,r.endereco,r.bairro,r.niche,r.obs,r.resp,r.canal,r.status,r.date_last,r.date_return,r.value].map(q).join(",")));
+  ALL().forEach(r=>lines.push([r.client,r.ig,r.wa_disp,r.city,r.endereco,r.bairro,r.niche,r.obs,r.resp,r.canal,r.conversa,r.status,r.date_last,r.date_return,r.value].map(q).join(",")));
   const blob=new Blob(["﻿"+lines.join("\n")],{type:"text/csv;charset=utf-8"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="CT-GISLAINE-export.csv";a.click();
 });
@@ -1121,8 +1157,8 @@ fillNicheList(); updateUndo();
 buildChips(); view(); updateFire();
 
 /* ===== v17: Agenda de contatos (controle de chamada e retorno) ===== */
-let agSitF="", agRespF="", agQ="", agOpen=null;
-const AG_SITS=[["atrasado","🔴 Atrasado"],["hoje","🟠 Hoje"],["semana","🟡 Esta semana"],["futuro","🟢 Mais pra frente"],["achamar","⚪ Sem retorno"]];
+let agSitF="", agRespF="", agQ="", agOpen=null, agConvF="", agDia="", agCampo="ret";
+const AG_SITS=[["atrasado","🔴 Atrasado"],["hoje","🟠 Hoje"],["semana","🟡 Esta semana"],["futuro","🟢 Mais pra frente"],["achamar","⚪ Sem data marcada"]];
 function agSituacao(r){
   const d=diasAte(r.date_return);
   if(d===null)return "achamar";
@@ -1131,10 +1167,16 @@ function agSituacao(r){
   if(d<=7)return "semana";
   return "futuro";
 }
-function agRows(){
+function agBase(){
   const mostraIna=document.getElementById("ag_ina").checked;
   let rows=ALL().filter(r=>mostraIna||!r.inativo);
   if(agRespF)rows=rows.filter(r=>r.resp===agRespF);
+  if(agConvF)rows=rows.filter(r=>(r.conversa||"")===agConvF);
+  if(agDia)rows=rows.filter(r=>ddmmToIso(agCampo==="ret"?r.date_return:r.date_last)===agDia);
+  return rows;
+}
+function agRows(){
+  let rows=agBase();
   if(agQ){const q=agQ.toLowerCase();rows=rows.filter(r=>((r.s||"")+" "+(r.obs||"")).toLowerCase().indexOf(q)>=0);}
   rows.forEach(r=>{r._sit=agSituacao(r);r._dd=diasAte(r.date_return);});
   const ord={atrasado:0,hoje:1,semana:2,futuro:3,achamar:4};
@@ -1155,26 +1197,32 @@ function agPrazo(r){
 function agRender(){
   const p=document.getElementById("agPanel");if(!p||p.hidden)return;
   const mostraIna=document.getElementById("ag_ina").checked;
-  let uni=ALL().filter(r=>mostraIna||!r.inativo);
-  if(agRespF)uni=uni.filter(r=>r.resp===agRespF);
+  const uni=agBase();
   const cs={};uni.forEach(r=>{const k=agSituacao(r);cs[k]=(cs[k]||0)+1;});
   document.getElementById("ag_sit").innerHTML=
     `<span class="rchip${agSitF?'':' on'}" data-s="">Todos (${uni.length})</span>`+
     AG_SITS.map(x=>`<span class="rchip${agSitF===x[0]?' on':''}" data-s="${x[0]}">${x[1]} (${cs[x[0]]||0})</span>`).join('');
   const base=ALL().filter(r=>mostraIna||!r.inativo);
   const rc={};base.forEach(r=>{if(r.resp)rc[r.resp]=(rc[r.resp]||0)+1;});
+  const cvc={};base.forEach(r=>{if(r.conversa)cvc[r.conversa]=(cvc[r.conversa]||0)+1;});
+  document.getElementById("ag_conv").innerHTML=
+    `<span class="rchip${agConvF?'':' on'}" data-c="">Todas</span>`+
+    CONVS.map(c=>`<span class="rchip${agConvF===c[0]?' on':''}" data-c="${esc(c[0])}">${c[1]} ${esc(c[0])} (${cvc[c[0]]||0})</span>`).join('');
+  document.getElementById("ag_cret").classList.toggle("on",agCampo==="ret");
+  document.getElementById("ag_clast").classList.toggle("on",agCampo==="last");
   document.getElementById("ag_resp").innerHTML=
     `<span class="rchip${agRespF?'':' on'}" data-r="">Todos</span>`+
     ["Gislaine","Juliana"].map(n=>`<span class="rchip${agRespF===n?' on':''}" data-r="${n}">${n} (${rc[n]||0})</span>`).join('');
   let rows=agRows();
   if(agSitF)rows=rows.filter(r=>r._sit===agSitF);
   const out=document.getElementById("ag_out");
-  if(!rows.length){out.innerHTML='<div class="hint">Nenhum contato nesse filtro.</div>';return;}
-  const tagTxt={atrasado:"Atrasado",hoje:"Hoje",semana:"Esta semana",futuro:"Agendado",achamar:"A chamar"};
-  let html="",ultima="";
+  const cab=agDia?`<div class="hint" style="margin:6px 0 10px">📅 ${rows.length} contato(s) com ${agCampo==="ret"?"retorno":"último contato"} em <b>${isoToDDMM(agDia)}</b></div>`:"";
+  if(!rows.length){out.innerHTML=cab+'<div class="hint">Nenhum contato nesse filtro.</div>';return;}
+  const tagTxt={atrasado:"Atrasado",hoje:"Hoje",semana:"Esta semana",futuro:"Agendado",achamar:"Sem data"};
+  let html=cab,ultima="";
   rows.forEach(r=>{
     if(!agSitF&&r._sit!==ultima){ultima=r._sit;const lbl=AG_SITS.find(x=>x[0]===r._sit);html+=`<div class="agsep">${lbl?lbl[1]:""}</div>`;}
-    const sub=[r.bairro,r.niche,r.canal?({Rota:"🗺️ rota",WhatsApp:"📲 whats",Instagram:"📷 insta"}[r.canal]||r.canal):""].filter(Boolean).join(" · ");
+    const sub=[r.bairro,r.niche,r.canal?({Rota:"🗺️ rota",WhatsApp:"📲 whats",Instagram:"📷 insta"}[r.canal]||r.canal):"",r.conversa?(convIco(r.conversa)+" "+r.conversa.toLowerCase()):""].filter(Boolean).join(" · ");
     const aberta=agOpen===r.id;
     html+=`<div class="agrow${aberta?' open':''}" data-ag="${esc(r.id)}">
       <span class="agdot ${r._sit}"></span>
@@ -1187,7 +1235,7 @@ function agRender(){
       const wa=r.wa?`<a class="wa" href="${waHref(r)}" target="_blank" rel="noopener">📲 ${r.wa_disp}</a>`:'<span class="mut">sem WhatsApp</span>';
       const ig=r.handle?`<a class="ig" href="${esc(r.ig)}" target="_blank" rel="noopener">@${esc(r.handle)}</a>`:'';
       html+=`<div class="agdet">
-        <div class="l"><span>${agPrazo(r)}</span>${r.person?`<span>Pessoa: <b>${esc(r.person)}</b></span>`:''}<span>Dono: <b>${esc(r.resp||'—')}</b></span><span>Captado por: <b>${esc(r.canal||'—')}</b></span><span>Status: <b>${esc(r.status||'—')}</b></span>${r.city?`<span>${esc([r.endereco,r.bairro,r.city].filter(Boolean).join(' · '))}</span>`:''}</div>
+        <div class="l"><span>${agPrazo(r)}</span>${r.person?`<span>Pessoa: <b>${esc(r.person)}</b></span>`:''}<span>Dono: <b>${esc(r.resp||'—')}</b></span><span>Captado por: <b>${esc(r.canal||'—')}</b></span><span>Conversa: <b>${esc(r.conversa||'—')}</b></span><span>Status: <b>${esc(r.status||'—')}</b></span>${r.city?`<span>${esc([r.endereco,r.bairro,r.city].filter(Boolean).join(' · '))}</span>`:''}</div>
         ${r.obs?`<div class="l"><span>📝 ${esc(r.obs)}</span></div>`:''}
         <div class="formbtns">${wa} ${ig} <button class="agedit" data-agedit="${esc(r.id)}">✏️ Abrir ficha / mudar datas</button></div>
       </div>`;
@@ -1203,6 +1251,12 @@ document.getElementById("ag_close").addEventListener("click",()=>{document.getEl
 document.getElementById("ag_sit").addEventListener("click",e=>{const c=e.target.closest(".rchip");if(!c)return;agSitF=c.dataset.s||"";agRender();});
 document.getElementById("ag_resp").addEventListener("click",e=>{const c=e.target.closest(".rchip");if(!c)return;agRespF=c.dataset.r||"";agRender();});
 document.getElementById("ag_ina").addEventListener("change",agRender);
+document.getElementById("ag_conv").addEventListener("click",e=>{const c=e.target.closest(".rchip");if(!c)return;agConvF=c.dataset.c||"";agRender();});
+document.getElementById("ag_dia").addEventListener("change",e=>{agDia=e.target.value||"";agRender();});
+document.getElementById("ag_hoje").addEventListener("click",()=>{const d=new Date();agDia=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");document.getElementById("ag_dia").value=agDia;agRender();});
+document.getElementById("ag_limpa").addEventListener("click",()=>{agDia="";document.getElementById("ag_dia").value="";agRender();});
+document.getElementById("ag_cret").addEventListener("click",()=>{agCampo="ret";agRender();});
+document.getElementById("ag_clast").addEventListener("click",()=>{agCampo="last";agRender();});
 document.getElementById("ag_q").addEventListener("input",e=>{agQ=e.target.value.trim();agRender();});
 document.getElementById("ag_out").addEventListener("click",e=>{
   const ed=e.target.closest("[data-agedit]");
