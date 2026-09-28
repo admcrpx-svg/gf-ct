@@ -108,6 +108,8 @@ a.wa{color:#7fe0a0}
 .cvt.espera{border-color:#6ab7ff;background:rgba(106,183,255,.12)}
 .cvt.nao{border-color:#ff5b5b;background:rgba(255,91,91,.12)}
 .cvt.falando{border-color:#4dd39b;background:rgba(77,211,155,.12)}
+.cvt.orca{border-color:#6ab7ff;background:rgba(106,183,255,.18)}
+.cvt.nego{border-color:#ffb06a;background:rgba(255,176,106,.2)}
 #ag_dia{padding:7px 8px}
 .rsp.Juliana{background:#2a2233;color:#c9a6ff} .rsp.Gislaine{background:#3a2a12;color:var(--sun2)}
 .mut{color:var(--mut)} .ret.late{color:#ff9d8a;font-weight:600}
@@ -194,6 +196,7 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
 <div class="bar">
   <div class="row1">
     <input type="search" id="q" placeholder="Buscar nome, @, cidade, nicho...">
+    <select id="etapaSel"><option value="">Etapa: todas</option></select>
     <select id="sort">
       <option value="ret">Ordenar: retorno mais próximo</option>
       <option value="status">Ordenar: status (quente→frio)</option>
@@ -245,7 +248,7 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
     <label><span>Bairro</span><input id="f_bairro" placeholder="Kobrasol" autocomplete="off"></label>
     <label><span>Nicho <small class="mut">— escolhe ou digita um novo</small></span><input id="f_niche" list="nicheList" placeholder="Pizzaria, Barbearia, Restaurante..." autocomplete="off"><datalist id="nicheList"></datalist></label>
     <label><span>Responsável</span><select id="f_resp"><option>Gislaine</option><option>Juliana</option><option value="">—</option></select></label>
-    <label><span>Como está a conversa</span><select id="f_conversa"><option value="">—</option><option value="Conversando">💬 Conversando</option><option value="Não respondeu">📭 Mandei e não respondeu</option><option value="Parou de responder">🔇 Parou de responder</option><option value="Sem disponibilidade">⏳ Sem disponibilidade agora</option><option value="Não quer o serviço">🚫 Não quer o serviço</option></select></label>
+    <label><span>Como está a conversa</span><select id="f_conversa"><option value="">—</option><option value="Conversando">💬 Conversando</option><option value="Enviado orçamento">📄 Enviado orçamento</option><option value="Negociando">🤝 Negociando</option><option value="Não respondeu">📭 Mandei e não respondeu</option><option value="Parou de responder">🔇 Parou de responder</option><option value="Sem disponibilidade">⏳ Sem disponibilidade agora</option><option value="Não quer o serviço">🚫 Não quer o serviço</option></select></label>
     <label><span>Captado por <small class="mut">— só pra saber a origem</small></span><select id="f_canal"><option value="">—</option><option value="Rota">🗺️ Rota</option><option value="WhatsApp">📲 WhatsApp</option><option value="Instagram">📷 Instagram</option></select></label>
     <label><span>Status</span><select id="f_status"><option value="Novo">Novo</option><option value="Hot">Hot</option><option value="Negotiating">Negociando</option><option value="Cold">Cold</option><option value="Freeze">Freeze</option></select></label>
     <label><span>Último contato</span><input id="f_last" type="date" autocomplete="off"></label>
@@ -256,6 +259,8 @@ td .selbox{width:16px;height:16px;accent-color:var(--sun2);cursor:pointer}
   <div class="motrow">
     <span class="hint">como está a conversa:</span>
     <button type="button" class="rbtn cvb" data-c="Conversando">💬 Conversando</button>
+    <button type="button" class="rbtn cvb" data-c="Enviado orçamento">📄 Orçamento enviado</button>
+    <button type="button" class="rbtn cvb" data-c="Negociando">🤝 Negociando</button>
     <button type="button" class="rbtn cvb" data-c="Não respondeu">📭 Não respondeu</button>
     <button type="button" class="rbtn cvb" data-c="Parou de responder">🔇 Parou de responder</button>
     <button type="button" class="rbtn cvb" data-c="Sem disponibilidade">⏳ Sem disponibilidade</button>
@@ -408,7 +413,7 @@ let overrides={}; try{overrides=JSON.parse(localStorage.getItem("giscrm_over")||
 let removed=[]; try{removed=JSON.parse(localStorage.getItem("giscrm_removed")||"[]")}catch(e){removed=[]}
 function saveRemoved(){localStorage.setItem("giscrm_removed",JSON.stringify(removed));}
 let lastRoute=null; try{lastRoute=JSON.parse(localStorage.getItem("giscrm_lastroute")||"null")}catch(e){lastRoute=null}
-let fResp="Todos", fStat="Todos", fCanal="Todos", fHide=false, fAlerta=false, fRota=false, fInativo=false, fLixeira=false, sortK="ret", q="";
+let fResp="Todos", fStat="Todos", fCanal="Todos", fEtapa="", fHide=false, fAlerta=false, fRota=false, fInativo=false, fLixeira=false, sortK="ret", q="";
 function LIXO(){return DATA.concat(added).filter(r=>removed.indexOf(r.id)>=0).map(r=>{const o=overrides[r.id];return o?Object.assign({},r,o):r;});}
 const statOrder={Hot:0,Negotiating:1,Novo:2,Freeze:3,Cold:4,"—":5};
 const TODAY=new Date(); const todayKey=Math.floor(Date.UTC(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate())/86400000);
@@ -416,7 +421,7 @@ const TODAY=new Date(); const todayKey=Math.floor(Date.UTC(TODAY.getFullYear(),T
 function normHandle(s){if(!s)return"";s=(""+s).trim().toLowerCase();if(!s||s==="-")return"";s=s.replace(/https?:\/\//,"").replace("www.","");if(s.indexOf("instagram.com/")>=0)s=s.split("instagram.com/")[1];s=s.replace(/^@/,"");s=s.split(/[\/?# ]/)[0].trim();return s;}
 function waFull(s){let d=(""+(s||"")).replace(/\D/g,"");if(!d)return"";if(d.length>11&&d.startsWith("55"))d=d.slice(2);if(!d.startsWith("55"))d="55"+d;return d;}
 function waDisp(full){if(!full)return"";let x=full.startsWith("55")?full.slice(2):full;let ddd=x.slice(0,2),rest=x.slice(2);if(rest.length===9)return`(${ddd}) ${rest.slice(0,5)}-${rest.slice(5)}`;if(rest.length===8)return`(${ddd}) ${rest.slice(0,4)}-${rest.slice(4)}`;return`(${ddd}) ${rest}`;}
-const CONVS=[["Conversando","💬","falando"],["Não respondeu","📭","sem"],["Parou de responder","🔇","parou"],["Sem disponibilidade","⏳","espera"],["Não quer o serviço","🚫","nao"]];
+const CONVS=[["Conversando","💬","falando"],["Enviado orçamento","📄","orca"],["Negociando","🤝","nego"],["Não respondeu","📭","sem"],["Parou de responder","🔇","parou"],["Sem disponibilidade","⏳","espera"],["Não quer o serviço","🚫","nao"]];
 function convIco(v){const c=CONVS.find(x=>x[0]===v);return c?c[1]:"";}
 function convCls(v){const c=CONVS.find(x=>x[0]===v);return c?c[2]:"";}
 function ddmmToIso(v){v=(""+(v||"")).trim();if(!v)return "";
@@ -459,6 +464,9 @@ function buildChips(){
   const rc=counts("resp");
   document.getElementById("respChips").innerHTML=
     ['Todos','Gislaine','Juliana'].map(v=>`<span class="chip" data-t="resp" data-v="${v}">${v}${v!=='Todos'?' '+(rc[v]||0):''}</span>`).join('');
+  const cvn={};ALL().forEach(r=>{if(r.conversa)cvn[r.conversa]=(cvn[r.conversa]||0)+1;});
+  const es=document.getElementById("etapaSel");
+  if(es)es.innerHTML='<option value="">Etapa: todas</option>'+CONVS.map(c=>`<option value="${esc(c[0])}"${fEtapa===c[0]?" selected":""}>${c[1]} ${esc(c[0])} (${cvn[c[0]]||0})</option>`).join('');
   const cnc={};ALL().forEach(r=>{if(r.canal)cnc[r.canal]=(cnc[r.canal]||0)+1;});
   const cIco={Rota:"🗺️",WhatsApp:"📲",Instagram:"📷"};
   document.getElementById("canalChips").innerHTML=
@@ -504,6 +512,7 @@ function currentRows(){
     if(fResp!=="Todos"&&r.resp!==fResp)return false;
     if(fStat!=="Todos"&&r.status!==fStat)return false;
     if(fCanal!=="Todos"&&(r.canal||"")!==fCanal)return false;
+    if(fEtapa&&(r.conversa||"")!==fEtapa)return false;
     if(fAlerta&&!r.alerta)return false;
     if(fHide&&done[r.id])return false;
     if(fInativo&&!r.inativo)return false;
@@ -742,6 +751,7 @@ document.addEventListener("click",e=>{
 });
 document.getElementById("q").addEventListener("input",e=>{q=e.target.value.toLowerCase().trim();view()});
 document.getElementById("sort").addEventListener("change",e=>{sortK=e.target.value;view()});
+document.getElementById("etapaSel").addEventListener("change",e=>{fEtapa=e.target.value;view()});
 document.getElementById("hideDone").addEventListener("click",e=>{fHide=!fHide;e.target.textContent=fHide?'👁️ Mostrar todos':'👁️ Ocultar contatados';view()});
 document.querySelectorAll("th[data-k]").forEach(th=>th.addEventListener("click",()=>{
   const k=th.dataset.k; sortK=(k==='rk')?'ret':(k==='status')?'status':(k==='city')?'city':'name';
