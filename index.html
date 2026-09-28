@@ -60,6 +60,8 @@ tr.inativa td.delcell{opacity:1}
 .inatag{display:inline-block;font-size:10.5px;padding:1px 8px;border-radius:20px;background:#2a2233;color:#c9a6ff;border:1px solid #4a3a5a;margin-left:6px;cursor:pointer;white-space:nowrap}
 .restore{color:var(--sun2);cursor:pointer;font-size:12.5px;white-space:nowrap;border:1px solid var(--line);border-radius:7px;padding:3px 9px}
 .restore:hover{border-color:var(--sun1)}
+.chipx{margin-left:7px;padding:0 3px;opacity:.55;font-weight:700}
+.chipx:hover{opacity:1}
 #rotaChip.on,#inativoChip.on,#lixoChip.on{color:#111;background:linear-gradient(90deg,var(--sun1),var(--sun2));border-color:transparent;font-weight:600}
 td.delcell{text-align:right;width:34px}
 .obs{color:#ffd479;font-size:11.5px;margin-top:2px;cursor:pointer;font-weight:400}
@@ -509,7 +511,7 @@ function buildChips(){
   if(rc2){
     if(lastRoute&&lastRoute.ids&&lastRoute.ids.length){
       const n=lastRoute.ids.filter(id=>ALL().some(r=>r.id===id)).length;
-      rc2.hidden=false; rc2.textContent="🗺️ Última rota ("+n+")"; rc2.classList.toggle("on",fRota);
+      rc2.hidden=false; rc2.innerHTML='🗺️ Última rota ('+n+')<span class="chipx" id="rotaChipX" title="Limpar a última rota">✕</span>'; rc2.classList.toggle("on",fRota);
     }else{rc2.hidden=true;}
   }
   const ic=document.getElementById("inativoChip");
@@ -522,7 +524,9 @@ function buildChips(){
     else{lx.hidden=true;if(fLixeira){fLixeira=false;}}}
   syncChips();
 }
-document.getElementById("rotaChip").addEventListener("click",()=>{fRota=!fRota;buildChips();view();});
+document.getElementById("rotaChip").addEventListener("click",e=>{
+  if(e.target.id==="rotaChipX"){ lastRoute=null; fRota=false; try{localStorage.removeItem("giscrm_lastroute");}catch(err){} buildChips(); view(); return; }
+  fRota=!fRota;buildChips();view();});
 document.getElementById("inativoChip").addEventListener("click",()=>{fInativo=!fInativo;if(fInativo)fLixeira=false;buildChips();view();});
 document.getElementById("lixoChip").addEventListener("click",()=>{fLixeira=!fLixeira;if(fLixeira){fInativo=false;fRota=false;}buildChips();view();});
 function syncChips(){
